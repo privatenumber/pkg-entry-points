@@ -12,6 +12,8 @@ npm install pkg-entry-points
 
 ## Usage
 
+To get all entry-points for a package located at `./node_modules/my-package`:
+
 ```ts
 import { getPackageEntryPoints } from 'pkg-entry-points'
 

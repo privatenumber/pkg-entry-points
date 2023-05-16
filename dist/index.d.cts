@@ -1,9 +1,9 @@
 import _fs from 'fs';
 
 type ConditionToPath = [conditions: string[], internalPath: string];
-type PkgExports = {
+type PackageEntryPoints = {
     [subpath: string]: ConditionToPath[];
 };
-declare const getPackageEntryPoints: (packagePath: string, fs?: typeof _fs.promises) => Promise<PkgExports>;
+declare const getPackageEntryPoints: (packagePath: string, fs?: typeof _fs.promises) => Promise<PackageEntryPoints>;
 
-export { PkgExports, getPackageEntryPoints };
+export { PackageEntryPoints, getPackageEntryPoints };

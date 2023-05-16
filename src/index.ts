@@ -6,7 +6,7 @@ import { createPathMatcher, pathMatches, type PathMatcher } from './utils/path-m
 import { STAR } from './utils/constants.js';
 
 type ConditionToPath = [conditions: string[], internalPath: string];
-export type PkgExports = {
+export type PackageEntryPoints = {
 	[subpath: string]: ConditionToPath[];
 };
 
@@ -92,7 +92,7 @@ const getConditions: GetConditions = (
 const analyzeExportsWithFiles = (
 	exports: PackageJson.Exports,
 	packageFiles: string[],
-): PkgExports => {
+): PackageEntryPoints => {
 	if (exports === null) {
 		return {};
 	}
@@ -163,7 +163,7 @@ const analyzeExportsWithFiles = (
 		}
 	}
 
-	const unblockedExports: PkgExports = {};
+	const unblockedExports: PackageEntryPoints = {};
 	for (const subpath in subpathConditions) {
 		if (!Object.hasOwn(subpathConditions, subpath)) {
 			continue;
@@ -196,7 +196,7 @@ const analyzeExportsWithFiles = (
 export const getPackageEntryPoints = async (
 	packagePath: string,
 	fs = _fs.promises,
-): Promise<PkgExports> => {
+): Promise<PackageEntryPoints> => {
 	const packageJsonString = await fs.readFile(path.join(packagePath, 'package.json'), 'utf8');
 	const packageJson = JSON.parse(packageJsonString) as PackageJson;
 	const packageFiles = await getAllFiles(fs, packagePath);

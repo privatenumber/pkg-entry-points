@@ -200,11 +200,11 @@ Entry-points evaluated from the [`typescript` package](https://github.com/micros
 
 ### getPackageEntryPoints(packagePath, fs?)
 
-Returns: `Promise<PkgExports>`
+Returns: `Promise<PackageEntryPoints>`
 
 Type definitions:
 ```ts
-type PkgExports = {
+type PackageEntryPoints = {
     [subpath: string]: ConditionToPath[]
 }
 

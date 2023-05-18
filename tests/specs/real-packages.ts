@@ -6,25 +6,41 @@ export default testSuite(({ describe }) => {
 		test('vue', async () => {
 			const packagePath = './node_modules/vue';
 			const packageExports = await getPackageEntryPoints(packagePath);
+
 			expect(packageExports).toStrictEqual({
 				'.': [
-					[['types'], './dist/vue.d.ts'],
-					[['require'], './index.js'],
+					[['import', 'types'], './dist/vue.d.mts'],
 					[['import', 'node'], './index.mjs'],
 					[['default', 'import'], './dist/vue.runtime.esm-bundler.js'],
+					[['require', 'types'], './dist/vue.d.ts'],
+					[['default', 'require'], './index.js'],
 				],
 				'./server-renderer': [
-					[['types'], './server-renderer/index.d.ts'],
-					[['import'], './server-renderer/index.mjs'],
-					[['require'], './server-renderer/index.js'],
+					[['import', 'types'], './server-renderer/index.d.mts'],
+					[['default', 'import'], './server-renderer/index.mjs'],
+					[['require', 'types'], './server-renderer/index.d.ts'],
+					[['default', 'require'], './server-renderer/index.js'],
 				],
 				'./compiler-sfc': [
-					[['types'], './compiler-sfc/index.d.ts'],
-					[['import'], './compiler-sfc/index.mjs'],
-					[['require'], './compiler-sfc/index.js'],
+					[['import', 'types'], './compiler-sfc/index.d.mts'],
+					[['default', 'import'], './compiler-sfc/index.mjs'],
+					[['require', 'types'], './compiler-sfc/index.d.ts'],
+					[['default', 'require'], './compiler-sfc/index.js'],
 				],
+				'./jsx-runtime': [
+					[['types'], './jsx-runtime/index.d.ts'],
+					[['import'], './jsx-runtime/index.mjs'],
+					[['require'], './jsx-runtime/index.js'],
+				],
+				'./jsx-dev-runtime': [
+					[['types'], './jsx-runtime/index.d.ts'],
+					[['import'], './jsx-runtime/index.mjs'],
+					[['require'], './jsx-runtime/index.js'],
+				],
+				'./jsx': [[['default'], './jsx.d.ts']],
 				'./dist/vue.cjs.js': [[['default'], './dist/vue.cjs.js']],
 				'./dist/vue.cjs.prod.js': [[['default'], './dist/vue.cjs.prod.js']],
+				'./dist/vue.d.mts': [[['default'], './dist/vue.d.mts']],
 				'./dist/vue.d.ts': [[['default'], './dist/vue.d.ts']],
 				'./dist/vue.esm-browser.js': [[['default'], './dist/vue.esm-browser.js']],
 				'./dist/vue.esm-browser.prod.js': [[['default'], './dist/vue.esm-browser.prod.js']],

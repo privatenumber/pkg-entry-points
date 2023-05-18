@@ -18,6 +18,7 @@ export default testSuite(({ describe }) => {
 					'main.mjs': 'export default 123',
 					'a.mjs': 'export default 123',
 					'directory/b.mjs': 'export default 123',
+					'types.d.ts': 'const a: number; export default a',
 				},
 			});
 
@@ -34,6 +35,7 @@ export default testSuite(({ describe }) => {
 				'./package.json': [
 					[['default'], './package.json'],
 				],
+				'./types.d.ts': [[['default'], './types.d.ts']],
 			});
 
 			await fixture.rm();

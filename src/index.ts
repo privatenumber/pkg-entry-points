@@ -205,7 +205,7 @@ export const getPackageEntryPoints = async (
 		return analyzeExportsWithFiles(packageJson.exports, packageFiles);
 	}
 
-	const jsExtension = /\.(?:json|[cm]?js)$/;
+	const jsExtension = /\.(?:json|[cm]?js|d\.ts)$/;
 	const legacyExports = Object.fromEntries(
 		packageFiles
 			.filter(filePath => jsExtension.test(filePath))

@@ -99,5 +99,115 @@ export default testSuite(({ describe }) => {
 
 			await fixture.rm();
 		});
+
+		describe('extensionless main', ({ test }) => {
+			test('explicitly extensionless', async () => {
+				const {
+					fixture,
+					assertSubpath,
+					packagePath,
+				} = await createPackage({
+					pkg: {
+						'package.json': createPkgJson({
+							main: './file',
+						}),
+						file: 'export default 123',
+						'file.js': 'export default 123',
+						'file.json': 'export default 123',
+					},
+				});
+
+				await assertSubpath('pkg', []);
+
+				const packageExports = await getPackageEntryPoints(packagePath);
+				expect(packageExports).toStrictEqual({
+					'.': [
+						[['default'], './file'],
+					],
+					'./package.json': [
+						[['default'], './package.json'],
+					],
+					'./file': [
+						[['default'], './file'],
+					],
+					'./file.js': [
+						[['default'], './file.js'],
+					],
+					'./file.json': [
+						[['default'], './file.json'],
+					],
+				});
+
+				await fixture.rm();
+			});
+
+			test('implicitly .js', async () => {
+				const {
+					fixture,
+					assertSubpath,
+					packagePath,
+				} = await createPackage({
+					pkg: {
+						'package.json': createPkgJson({
+							main: './file',
+						}),
+						'file.js': 'export default 123',
+						'file.json': 'export default 123',
+					},
+				});
+
+				await assertSubpath('pkg', []);
+
+				const packageExports = await getPackageEntryPoints(packagePath);
+				expect(packageExports).toStrictEqual({
+					'.': [
+						[['default'], './file.js'],
+					],
+					'./package.json': [
+						[['default'], './package.json'],
+					],
+					'./file.js': [
+						[['default'], './file.js'],
+					],
+					'./file.json': [
+						[['default'], './file.json'],
+					],
+				});
+
+				await fixture.rm();
+			});
+
+			test('implicitly .json', async () => {
+				const {
+					fixture,
+					assertSubpath,
+					packagePath,
+				} = await createPackage({
+					pkg: {
+						'package.json': createPkgJson({
+							main: './file',
+						}),
+						'file.json': 'export default 123',
+					},
+				});
+
+				await assertSubpath('pkg', []);
+
+				const packageExports = await getPackageEntryPoints(packagePath);
+				expect(packageExports).toStrictEqual({
+					'.': [
+						[['default'], './file.json'],
+					],
+					'./package.json': [
+						[['default'], './package.json'],
+					],
+					'./file.json': [
+						[['default'], './file.json'],
+					],
+				});
+
+				await fixture.rm();
+			});
+		});
 	});
 });

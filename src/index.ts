@@ -193,6 +193,10 @@ const analyzeExportsWithFiles = (
 	return unblockedExports;
 };
 
+const legacyCondition = (
+	filePath: string,
+) => [[['default'], filePath] as ConditionToPath];
+
 export const getPackageEntryPoints = async (
 	packagePath: string,
 	fs = _fs.promises,
@@ -211,18 +215,22 @@ export const getPackageEntryPoints = async (
 			.filter(filePath => jsExtension.test(filePath))
 			.map(filePath => [
 				filePath,
-				[[['default'], filePath] as ConditionToPath],
+				legacyCondition(filePath),
 			]),
 	);
 
 	let packageMain = packageJson.main ?? './index.js';
-
 	if (packageMain[0] !== '.') {
 		packageMain = `./${packageMain}`;
 	}
 
-	if (packageFiles.includes(packageMain)) {
-		legacyExports['.'] = [[['default'], packageMain] as ConditionToPath];
+	for (const extension of ['', '.js', '.json']) {
+		const target = packageMain + extension;
+		if (packageFiles.includes(target)) {
+			legacyExports['.'] = legacyCondition(target);
+			legacyExports[target] = legacyCondition(target);
+			break;
+		}
 	}
 
 	return legacyExports;

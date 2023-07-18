@@ -2,7 +2,7 @@ import { testSuite, expect } from 'manten';
 import { createPackage, createPkgJson } from '../utils.js';
 
 export default testSuite(({ describe }) => {
-	describe('Node.js resolve behavior', ({ test }) => {
+	describe('Node.js resolve behavior', ({ test, describe }) => {
 		test('Allows any character as condition', async () => {
 			const condition = '\\∑´®¥|,.-=_!@#$%^&*()"12\r345\n67890œ∑´®†¥¨ˆøπ“‘åß∂ƒ©˙∆˚¬…æ≈ç√∫˜µ≤≥÷';
 			const {
@@ -222,6 +222,65 @@ export default testSuite(({ describe }) => {
 			await expect(() => assertSubpath('pkg/a', ['a'])).rejects.toThrowError('ERR_MODULE_NOT_FOUND');
 
 			await fixture.rm();
+		});
+
+		describe('package.json#main', ({ test }) => {
+			test('Resolve extensionless file (explicit is highest priority)', async () => {
+				const {
+					fixture,
+					assertSubpath,
+				} = await createPackage({
+					pkg: {
+						'package.json': createPkgJson({
+							main: 'a',
+						}),
+						a: 'module.exports = 123',
+						'a.js': 'module.exports = 123',
+						'a.json': '{}',
+					},
+				});
+
+				expect(await assertSubpath('pkg', [])).toMatch(/a$/);
+
+				await fixture.rm();
+			});
+
+			test('Resolve implicit .js file', async () => {
+				const {
+					fixture,
+					assertSubpath,
+				} = await createPackage({
+					pkg: {
+						'package.json': createPkgJson({
+							main: 'a',
+						}),
+						'a.json': '{}',
+						'a.js': 'module.exports = 123',
+					},
+				});
+
+				expect(await assertSubpath('pkg', [])).toMatch(/a\.js$/);
+
+				await fixture.rm();
+			});
+
+			test('Resolve implicit .json file', async () => {
+				const {
+					fixture,
+					assertSubpath,
+				} = await createPackage({
+					pkg: {
+						'package.json': createPkgJson({
+							main: 'a',
+						}),
+						'a.json': '{}',
+					},
+				});
+
+				expect(await assertSubpath('pkg', [])).toMatch(/a\.json$/);
+
+				await fixture.rm();
+			});
 		});
 	});
 });

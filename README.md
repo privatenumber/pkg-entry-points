@@ -2,7 +2,7 @@
 
 Get all entry-points for an npm package. Supports the [`exports` field](https://nodejs.org/api/packages.html#exports) to expand subpaths and condition combinations.
 
-<sub>Support this project by ⭐️ starring and sharing it. [Follow me](https://github.com/privatenumber) to see what other cool projects I'm working on! ❤️</sub>
+<sub>Found this package useful? Show your support & appreciation by [sponsoring](https://github.com/sponsors/privatenumber)! ❤️</sub>
 
 ## Install
 
@@ -238,3 +238,10 @@ If the package does not have an `exports` property, it will return an object whe
 
     The file-system to use. Defaults to Node.js's `fs/promises` module.
 
+
+## Sponsors
+<p align="center">
+	<a href="https://github.com/sponsors/privatenumber">
+		<img src="https://cdn.jsdelivr.net/gh/privatenumber/sponsors/sponsorkit/sponsors.svg">
+	</a>
+</p>

@@ -245,3 +245,10 @@ If the package does not have an `exports` property, it will return an object whe
 		<img src="https://cdn.jsdelivr.net/gh/privatenumber/sponsors/sponsorkit/sponsors.svg">
 	</a>
 </p>
+
+
+## Related
+
+### [resolve-pkg-maps](https://github.com/privatenumber/resolve-pkg-maps)
+
+Utils to resolve `package.json` subpath & conditional [`exports`](https://nodejs.org/api/packages.html#exports)/[`imports`](https://nodejs.org/api/packages.html#imports) maps in resolvers.

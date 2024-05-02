@@ -1,7 +1,7 @@
 import _fs from 'fs';
 import path from 'path';
 import type { PackageJson } from 'type-fest';
-import { getAllFiles } from './utils/get-all-files.js';
+import { getAllFiles, getAllFilesSync } from './utils/get-all-files.js';
 import { createPathMatcher, pathMatches, type PathMatcher } from './utils/path-matcher.js';
 import { STAR } from './utils/constants.js';
 
@@ -204,6 +204,45 @@ export const getPackageEntryPoints = async (
 	const packageJsonString = await fs.readFile(path.join(packagePath, 'package.json'), 'utf8');
 	const packageJson = JSON.parse(packageJsonString) as PackageJson;
 	const packageFiles = await getAllFiles(fs, packagePath);
+
+	if (packageJson.exports !== undefined) {
+		return analyzeExportsWithFiles(packageJson.exports, packageFiles);
+	}
+
+	const jsExtension = /\.(?:json|[cm]?js|d\.ts)$/;
+	const legacyExports = Object.fromEntries(
+		packageFiles
+			.filter(filePath => jsExtension.test(filePath))
+			.map(filePath => [
+				filePath,
+				legacyCondition(filePath),
+			]),
+	);
+
+	let packageMain = packageJson.main ?? './index.js';
+	if (packageMain[0] !== '.') {
+		packageMain = `./${packageMain}`;
+	}
+
+	for (const extension of ['', '.js', '.json']) {
+		const target = packageMain + extension;
+		if (packageFiles.includes(target)) {
+			legacyExports['.'] = legacyCondition(target);
+			legacyExports[target] = legacyCondition(target);
+			break;
+		}
+	}
+
+	return legacyExports;
+};
+
+export const getPackageEntryPointsSync = (
+	packagePath: string,
+	fs = _fs,
+): PackageEntryPoints => {
+	const packageJsonString = fs.readFileSync(path.join(packagePath, 'package.json'), 'utf8');
+	const packageJson = JSON.parse(packageJsonString) as PackageJson;
+	const packageFiles = getAllFilesSync(fs, packagePath);
 
 	if (packageJson.exports !== undefined) {
 		return analyzeExportsWithFiles(packageJson.exports, packageFiles);

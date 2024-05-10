@@ -197,18 +197,10 @@ const legacyCondition = (
 	filePath: string,
 ) => [[['default'], filePath] as ConditionToPath];
 
-export const getPackageEntryPoints = async (
-	packagePath: string,
-	fs = _fs.promises,
-): Promise<PackageEntryPoints> => {
-	const packageJsonString = await fs.readFile(path.join(packagePath, 'package.json'), 'utf8');
-	const packageJson = JSON.parse(packageJsonString) as PackageJson;
-	const packageFiles = await getAllFiles(fs, packagePath);
-
-	if (packageJson.exports !== undefined) {
-		return analyzeExportsWithFiles(packageJson.exports, packageFiles);
-	}
-
+const analyzeLegacyExports = (
+	packageJson: PackageJson,
+	packageFiles: string[],
+): PackageEntryPoints => {
 	const jsExtension = /\.(?:json|[cm]?js|d\.ts)$/;
 	const legacyExports = Object.fromEntries(
 		packageFiles
@@ -236,6 +228,21 @@ export const getPackageEntryPoints = async (
 	return legacyExports;
 };
 
+export const getPackageEntryPoints = async (
+	packagePath: string,
+	fs = _fs.promises,
+): Promise<PackageEntryPoints> => {
+	const packageJsonString = await fs.readFile(path.join(packagePath, 'package.json'), 'utf8');
+	const packageJson = JSON.parse(packageJsonString) as PackageJson;
+	const packageFiles = await getAllFiles(fs, packagePath);
+
+	if (packageJson.exports !== undefined) {
+		return analyzeExportsWithFiles(packageJson.exports, packageFiles);
+	}
+
+	return analyzeLegacyExports(packageJson, packageFiles);
+};
+
 export const getPackageEntryPointsSync = (
 	packagePath: string,
 	fs = _fs,
@@ -248,29 +255,5 @@ export const getPackageEntryPointsSync = (
 		return analyzeExportsWithFiles(packageJson.exports, packageFiles);
 	}
 
-	const jsExtension = /\.(?:json|[cm]?js|d\.ts)$/;
-	const legacyExports = Object.fromEntries(
-		packageFiles
-			.filter(filePath => jsExtension.test(filePath))
-			.map(filePath => [
-				filePath,
-				legacyCondition(filePath),
-			]),
-	);
-
-	let packageMain = packageJson.main ?? './index.js';
-	if (packageMain[0] !== '.') {
-		packageMain = `./${packageMain}`;
-	}
-
-	for (const extension of ['', '.js', '.json']) {
-		const target = packageMain + extension;
-		if (packageFiles.includes(target)) {
-			legacyExports['.'] = legacyCondition(target);
-			legacyExports[target] = legacyCondition(target);
-			break;
-		}
-	}
-
-	return legacyExports;
+	return analyzeLegacyExports(packageJson, packageFiles);
 };

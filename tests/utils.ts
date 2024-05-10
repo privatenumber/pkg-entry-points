@@ -2,6 +2,7 @@ import path from 'path';
 import { createFixture, type FileTree } from 'fs-fixture';
 import type { PackageJson } from 'type-fest';
 import { execaNode } from 'execa';
+import { getPackageEntryPoints, getPackageEntryPointsSync } from '#pkg-entry-points';
 
 export const createPkgJson = (
 	pkgJson: PackageJson.PackageJsonStandard,
@@ -40,3 +41,8 @@ export const createPackage = async (
 		assertSubpath,
 	};
 };
+
+export const testScenarios = [
+	{ scenario: 'async', getPackageEntryPoints },
+	{ scenario: 'sync', getPackageEntryPoints: getPackageEntryPointsSync },
+];

@@ -21,7 +21,15 @@ export const createPackage = async (
 	) => {
 		await fixture.writeFile(
 			'index.mjs',
-			`console.log(await import.meta.resolve(${JSON.stringify(specifier)}));`,
+			`
+			import fs from 'fs/promises';
+			const resolved = import.meta.resolve(${JSON.stringify(specifier)});
+			const exists = await fs.access(new URL(resolved)).then(() => true, () => false);
+			if (!exists) {
+				throw new Error('ERR_MODULE_NOT_FOUND');
+			}
+			console.log(resolved);
+			`,
 		);
 
 		const { stdout } = await execaNode('./index.mjs', [], {

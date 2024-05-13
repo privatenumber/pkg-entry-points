@@ -47,7 +47,7 @@
 	"scripts": {
 		"build": "pkgroll --target=node12.19 --minify",
 		"lint": "lintroll --cache .",
-		"type-check": "tsc --noEmit",
+		"type-check": "tsc",
 		"test": "pnpm build && tsx tests",
 		"dev": "tsx watch --conditions=development tests",
 		"prepack": "pnpm build && clean-pkg-json"

@@ -2,7 +2,13 @@
 
 Get all entry-points for an npm package. Supports the [`exports` field](https://nodejs.org/api/packages.html#exports) to expand subpaths and condition combinations.
 
-<sub>Found this package useful? Show your support & appreciation by [sponsoring](https://github.com/sponsors/privatenumber)! ❤️</sub>
+<br>
+
+<p align="center">
+	<a href="https://github.com/sponsors/privatenumber/sponsorships?tier_id=398771"><img width="412" src="https://raw.githubusercontent.com/privatenumber/sponsors/master/banners/assets/donate.webp"></a>
+	<a href="https://github.com/sponsors/privatenumber/sponsorships?tier_id=397608"><img width="412" src="https://raw.githubusercontent.com/privatenumber/sponsors/master/banners/assets/sponsor.webp"></a>
+</p>
+<p align="center"><sup><i>Already a sponsor?</i> Join the discussion in the <a href="https://github.com/pvtnbr/pkg-entry-points">Development repo</a>!</sup></p>
 
 ## Install
 

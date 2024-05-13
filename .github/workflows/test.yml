@@ -24,7 +24,6 @@ jobs:
     - name: Install pnpm & dependencies
       uses: pnpm/action-setup@v3
       with:
-        version: 9
         run_install: true
 
     - name: Test

@@ -1,6 +1,7 @@
 {
 	"name": "pkg-entry-points",
 	"version": "0.0.0-semantic-release",
+	"packageManager": "pnpm@9.1.1",
 	"description": "Get all entry-points for an npm package. Supports the `exports` field in `package.json`.",
 	"keywords": [
 		"node.js",

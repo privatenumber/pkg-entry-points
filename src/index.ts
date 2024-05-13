@@ -112,7 +112,7 @@ const analyzeExportsWithFiles = (
 
 	const blocks: [
 		subpath: string | PathMatcher,
-		condition: string,
+		condition: string
 	][] = [];
 
 	for (const rawSubpath of keys) {

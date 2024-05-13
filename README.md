@@ -20,6 +20,7 @@ import { getPackageEntryPoints } from 'pkg-entry-points'
 const packageExports = await getPackageEntryPoints('./node_modules/my-package')
 
 console.log(packageExports)
+
 /*
 {
     '.': [

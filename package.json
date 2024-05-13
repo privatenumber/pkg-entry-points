@@ -20,10 +20,10 @@
 		"name": "Hiroki Osame",
 		"email": "hiroki.osame@gmail.com"
 	},
-	"type": "module",
 	"files": [
 		"dist"
 	],
+	"type": "module",
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.mjs",
 	"types": "./dist/index.d.cts",
@@ -46,20 +46,19 @@
 	},
 	"scripts": {
 		"build": "pkgroll --target=node12.19 --minify",
-		"lint": "eslint --cache .",
+		"lint": "lintroll --cache .",
 		"type-check": "tsc --noEmit",
 		"test": "pnpm build && tsx tests",
 		"dev": "tsx watch --conditions=development tests",
 		"prepack": "pnpm build && clean-pkg-json"
 	},
 	"devDependencies": {
-		"@pvtnbr/eslint-config": "^0.34.0",
 		"@types/node": "^20.2.0",
 		"axios": "^1.4.0",
 		"clean-pkg-json": "^1.2.0",
-		"eslint": "^8.40.0",
 		"execa": "^7.1.1",
 		"fs-fixture": "^1.2.0",
+		"lintroll": "^1.5.2",
 		"manten": "^0.7.0",
 		"pkgroll": "^1.10.0",
 		"resolve.exports": "^2.0.2",
@@ -67,8 +66,5 @@
 		"type-fest": "^3.10.0",
 		"typescript": "^5.0.4",
 		"vue": "^3.3.4"
-	},
-	"eslintConfig": {
-		"extends": "@pvtnbr"
 	}
 }

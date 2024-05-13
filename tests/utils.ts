@@ -51,6 +51,12 @@ export const createPackage = async (
 };
 
 export const testScenarios = [
-	{ scenario: 'async', getPackageEntryPoints },
-	{ scenario: 'sync', getPackageEntryPoints: getPackageEntryPointsSync },
+	{
+		scenario: 'async',
+		getPackageEntryPoints,
+	},
+	{
+		scenario: 'sync',
+		getPackageEntryPoints: getPackageEntryPointsSync,
+	},
 ];

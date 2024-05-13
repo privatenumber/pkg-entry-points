@@ -83,9 +83,9 @@ export default testSuite(({ describe }) => {
 									'./internal/*': null,
 								},
 							}),
-							'file-a.js': 'export default 123',
+							'file-a.js': 'module.exports = 123',
 							internal: {
-								'file-b.js': 'export default 123',
+								'file-b.js': 'module.exports = 123',
 							},
 						},
 					});

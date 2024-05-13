@@ -50,7 +50,7 @@ export default testSuite(({ describe }) => {
 					} = await createPackage({
 						pkg: {
 							'package.json': createPkgJson({}),
-							'index.js': 'export default 123',
+							'index.js': 'module.exports = 123',
 						},
 					});
 
@@ -82,7 +82,7 @@ export default testSuite(({ describe }) => {
 							'package.json': createPkgJson({
 								main: './missing-file.js',
 							}),
-							'index.js': 'export default 123',
+							'index.js': 'module.exports = 123',
 						},
 					});
 
@@ -112,9 +112,9 @@ export default testSuite(({ describe }) => {
 								'package.json': createPkgJson({
 									main: './file',
 								}),
-								file: 'export default 123',
-								'file.js': 'export default 123',
-								'file.json': 'export default 123',
+								file: 'module.exports = 123',
+								'file.js': 'module.exports = 123',
+								'file.json': '{ "default": 123 }',
 							},
 						});
 
@@ -152,7 +152,7 @@ export default testSuite(({ describe }) => {
 								'package.json': createPkgJson({
 									main: './file',
 								}),
-								'file.js': 'export default 123',
+								'file.js': 'module.exports = 123',
 								'file.json': 'export default 123',
 							},
 						});

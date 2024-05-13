@@ -117,7 +117,7 @@ export default testSuite(({ describe }) => {
 									},
 								}),
 								feature: {
-									'file-a.js': 'export default 123',
+									'file-a.js': 'module.exports = 123',
 								},
 							},
 						});
@@ -171,9 +171,9 @@ export default testSuite(({ describe }) => {
 								}),
 								'file.mjs': 'export default 123',
 								feature: {
-									'file-a.js': 'export default 123',
+									'file-a.js': 'module.exports = 123',
 									internal: {
-										'file-b.js': 'export default 123',
+										'file-b.js': 'module.exports = 123',
 									},
 								},
 							},
@@ -262,7 +262,7 @@ export default testSuite(({ describe }) => {
 										'./*': './file-*.js',
 									},
 								}),
-								'file-*.js': 'export default 123',
+								'file-*.js': 'module.exports = 123',
 							},
 						});
 

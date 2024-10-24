@@ -38,7 +38,7 @@ export const getAllFilesSync = (
 	dontShortenPath?: boolean,
 ): string[] => {
 	const directoryFiles = fs.readdirSync(directoryPath);
-	const fileTree = directoryFiles.map((fileName) => {
+	const fileTree = directoryFiles.filter(fileName => fileName !== 'node_modules').map((fileName) => {
 		const filePath = path.join(directoryPath, fileName);
 		const stat = fs.statSync(filePath);
 

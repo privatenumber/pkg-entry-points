@@ -1,4 +1,4 @@
-import _fs from 'fs';
+import type _fs from 'fs';
 import path from 'path';
 
 export const getAllFiles = async (

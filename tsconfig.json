@@ -5,5 +5,5 @@
 		"noEmit": true,
 		"esModuleInterop": true,
 		"isolatedModules": true,
-	}
+	},
 }

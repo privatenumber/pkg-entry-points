@@ -51,72 +51,209 @@ Entry-points evaluated from the [`vue` package](https://github.com/vuejs/core/bl
 ```json5
 {
     ".": [
-        [["types"], "./dist/vue.d.ts"],
-        [["require"], "./index.js"],
-        [["import", "node"], "./index.mjs"],
-        [["default", "import"], "./dist/vue.runtime.esm-bundler.js"]
+        [
+            [
+                "types",
+            ],
+            "./dist/vue.d.ts",
+        ],
+        [
+            [
+                "require",
+            ],
+            "./index.js",
+        ],
+        [
+            [
+                "import",
+                "node",
+            ],
+            "./index.mjs",
+        ],
+        [
+            [
+                "default",
+                "import",
+            ],
+            "./dist/vue.runtime.esm-bundler.js",
+        ],
     ],
     "./server-renderer": [
-        [["types"], "./server-renderer/index.d.ts"],
-        [["import"], "./server-renderer/index.mjs"],
-        [["require"], "./server-renderer/index.js"]
+        [
+            [
+                "types",
+            ],
+            "./server-renderer/index.d.ts",
+        ],
+        [
+            [
+                "import",
+            ],
+            "./server-renderer/index.mjs",
+        ],
+        [
+            [
+                "require",
+            ],
+            "./server-renderer/index.js",
+        ],
     ],
     "./compiler-sfc": [
-        [["types"], "./compiler-sfc/index.d.ts"],
-        [["import"], "./compiler-sfc/index.mjs"],
-        [["require"], "./compiler-sfc/index.js"]
+        [
+            [
+                "types",
+            ],
+            "./compiler-sfc/index.d.ts",
+        ],
+        [
+            [
+                "import",
+            ],
+            "./compiler-sfc/index.mjs",
+        ],
+        [
+            [
+                "require",
+            ],
+            "./compiler-sfc/index.js",
+        ],
     ],
     "./dist/vue.cjs.js": [
-        [["default"], "./dist/vue.cjs.js"]
+        [
+            [
+                "default",
+            ],
+            "./dist/vue.cjs.js",
+        ],
     ],
     "./dist/vue.cjs.prod.js": [
-        [["default"], "./dist/vue.cjs.prod.js"]
+        [
+            [
+                "default",
+            ],
+            "./dist/vue.cjs.prod.js",
+        ],
     ],
     "./dist/vue.d.ts": [
-        [["default"], "./dist/vue.d.ts"]
+        [
+            [
+                "default",
+            ],
+            "./dist/vue.d.ts",
+        ],
     ],
     "./dist/vue.esm-browser.js": [
-        [["default"], "./dist/vue.esm-browser.js"]
+        [
+            [
+                "default",
+            ],
+            "./dist/vue.esm-browser.js",
+        ],
     ],
     "./dist/vue.esm-browser.prod.js": [
-        [["default"], "./dist/vue.esm-browser.prod.js"]
+        [
+            [
+                "default",
+            ],
+            "./dist/vue.esm-browser.prod.js",
+        ],
     ],
     "./dist/vue.esm-bundler.js": [
-        [["default"], "./dist/vue.esm-bundler.js"]
+        [
+            [
+                "default",
+            ],
+            "./dist/vue.esm-bundler.js",
+        ],
     ],
     "./dist/vue.global.js": [
-        [["default"], "./dist/vue.global.js"]
+        [
+            [
+                "default",
+            ],
+            "./dist/vue.global.js",
+        ],
     ],
     "./dist/vue.global.prod.js": [
-        [["default"], "./dist/vue.global.prod.js"]
+        [
+            [
+                "default",
+            ],
+            "./dist/vue.global.prod.js",
+        ],
     ],
     "./dist/vue.runtime.esm-browser.js": [
-        [["default"], "./dist/vue.runtime.esm-browser.js"]
+        [
+            [
+                "default",
+            ],
+            "./dist/vue.runtime.esm-browser.js",
+        ],
     ],
     "./dist/vue.runtime.esm-browser.prod.js": [
-        [["default"], "./dist/vue.runtime.esm-browser.prod.js"]
+        [
+            [
+                "default",
+            ],
+            "./dist/vue.runtime.esm-browser.prod.js",
+        ],
     ],
     "./dist/vue.runtime.esm-bundler.js": [
-        [["default"], "./dist/vue.runtime.esm-bundler.js"]
+        [
+            [
+                "default",
+            ],
+            "./dist/vue.runtime.esm-bundler.js",
+        ],
     ],
     "./dist/vue.runtime.global.js": [
-        [["default"], "./dist/vue.runtime.global.js"]
+        [
+            [
+                "default",
+            ],
+            "./dist/vue.runtime.global.js",
+        ],
     ],
     "./dist/vue.runtime.global.prod.js": [
-        [["default"], "./dist/vue.runtime.global.prod.js"]
+        [
+            [
+                "default",
+            ],
+            "./dist/vue.runtime.global.prod.js",
+        ],
     ],
     "./package.json": [
-        [["default"], "./package.json"]
+        [
+            [
+                "default",
+            ],
+            "./package.json",
+        ],
     ],
     "./macros": [
-        [["default"], "./macros.d.ts"]
+        [
+            [
+                "default",
+            ],
+            "./macros.d.ts",
+        ],
     ],
     "./macros-global": [
-        [["default"], "./macros-global.d.ts"]
+        [
+            [
+                "default",
+            ],
+            "./macros-global.d.ts",
+        ],
     ],
     "./ref-macros": [
-        [["default"], "./ref-macros.d.ts"]
-    ]
+        [
+            [
+                "default",
+            ],
+            "./ref-macros.d.ts",
+        ],
+    ],
 }
 ```
 </details>
@@ -131,74 +268,189 @@ Entry-points evaluated from the [`typescript` package](https://github.com/micros
 ```json5
 {
     "./lib/cancellationToken.js": [
-        [["default"], "./lib/cancellationToken.js"]
+        [
+            [
+                "default",
+            ],
+            "./lib/cancellationToken.js",
+        ],
     ],
     "./lib/cs/diagnosticMessages.generated.json": [
-        [["default"], "./lib/cs/diagnosticMessages.generated.json"]
+        [
+            [
+                "default",
+            ],
+            "./lib/cs/diagnosticMessages.generated.json",
+        ],
     ],
     "./lib/de/diagnosticMessages.generated.json": [
-        [["default"], "./lib/de/diagnosticMessages.generated.json"]
+        [
+            [
+                "default",
+            ],
+            "./lib/de/diagnosticMessages.generated.json",
+        ],
     ],
     "./lib/es/diagnosticMessages.generated.json": [
-        [["default"], "./lib/es/diagnosticMessages.generated.json"]
+        [
+            [
+                "default",
+            ],
+            "./lib/es/diagnosticMessages.generated.json",
+        ],
     ],
     "./lib/fr/diagnosticMessages.generated.json": [
-        [["default"], "./lib/fr/diagnosticMessages.generated.json"]
+        [
+            [
+                "default",
+            ],
+            "./lib/fr/diagnosticMessages.generated.json",
+        ],
     ],
     "./lib/it/diagnosticMessages.generated.json": [
-        [["default"], "./lib/it/diagnosticMessages.generated.json"]
+        [
+            [
+                "default",
+            ],
+            "./lib/it/diagnosticMessages.generated.json",
+        ],
     ],
     "./lib/ja/diagnosticMessages.generated.json": [
-        [["default"], "./lib/ja/diagnosticMessages.generated.json"]
+        [
+            [
+                "default",
+            ],
+            "./lib/ja/diagnosticMessages.generated.json",
+        ],
     ],
     "./lib/ko/diagnosticMessages.generated.json": [
-        [["default"], "./lib/ko/diagnosticMessages.generated.json"]
+        [
+            [
+                "default",
+            ],
+            "./lib/ko/diagnosticMessages.generated.json",
+        ],
     ],
     "./lib/pl/diagnosticMessages.generated.json": [
-        [["default"], "./lib/pl/diagnosticMessages.generated.json"]
+        [
+            [
+                "default",
+            ],
+            "./lib/pl/diagnosticMessages.generated.json",
+        ],
     ],
     "./lib/pt-br/diagnosticMessages.generated.json": [
-        [["default"], "./lib/pt-br/diagnosticMessages.generated.json"]
+        [
+            [
+                "default",
+            ],
+            "./lib/pt-br/diagnosticMessages.generated.json",
+        ],
     ],
     "./lib/ru/diagnosticMessages.generated.json": [
-        [["default"], "./lib/ru/diagnosticMessages.generated.json"]
+        [
+            [
+                "default",
+            ],
+            "./lib/ru/diagnosticMessages.generated.json",
+        ],
     ],
     "./lib/tr/diagnosticMessages.generated.json": [
-        [["default"], "./lib/tr/diagnosticMessages.generated.json"]
+        [
+            [
+                "default",
+            ],
+            "./lib/tr/diagnosticMessages.generated.json",
+        ],
     ],
     "./lib/tsc.js": [
-        [["default"], "./lib/tsc.js"]
+        [
+            [
+                "default",
+            ],
+            "./lib/tsc.js",
+        ],
     ],
     "./lib/tsserver.js": [
-        [["default"], "./lib/tsserver.js"]
+        [
+            [
+                "default",
+            ],
+            "./lib/tsserver.js",
+        ],
     ],
     "./lib/tsserverlibrary.js": [
-        [["default"], "./lib/tsserverlibrary.js"]
+        [
+            [
+                "default",
+            ],
+            "./lib/tsserverlibrary.js",
+        ],
     ],
     "./lib/typesMap.json": [
-        [["default"], "./lib/typesMap.json"]
+        [
+            [
+                "default",
+            ],
+            "./lib/typesMap.json",
+        ],
     ],
     "./lib/typescript.js": [
-        [["default"], "./lib/typescript.js"]
+        [
+            [
+                "default",
+            ],
+            "./lib/typescript.js",
+        ],
     ],
     "./lib/typingsInstaller.js": [
-        [["default"], "./lib/typingsInstaller.js"]
+        [
+            [
+                "default",
+            ],
+            "./lib/typingsInstaller.js",
+        ],
     ],
     "./lib/watchGuard.js": [
-        [["default"], "./lib/watchGuard.js"]
+        [
+            [
+                "default",
+            ],
+            "./lib/watchGuard.js",
+        ],
     ],
     "./lib/zh-cn/diagnosticMessages.generated.json": [
-        [["default"], "./lib/zh-cn/diagnosticMessages.generated.json"]
+        [
+            [
+                "default",
+            ],
+            "./lib/zh-cn/diagnosticMessages.generated.json",
+        ],
     ],
     "./lib/zh-tw/diagnosticMessages.generated.json": [
-        [["default"], "./lib/zh-tw/diagnosticMessages.generated.json"]
+        [
+            [
+                "default",
+            ],
+            "./lib/zh-tw/diagnosticMessages.generated.json",
+        ],
     ],
     "./package.json": [
-        [["default"], "./package.json"]
+        [
+            [
+                "default",
+            ],
+            "./package.json",
+        ],
     ],
     ".": [
-        [["default"], "./lib/typescript.js"]
-    ]
+        [
+            [
+                "default",
+            ],
+            "./lib/typescript.js",
+        ],
+    ],
 }
 ```
 </details>

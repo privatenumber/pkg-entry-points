@@ -31,6 +31,25 @@ export default testSuite(({ describe }) => {
 					await fixture.rm();
 				});
 
+				test('empty object', async () => {
+					const {
+						fixture,
+						packagePath,
+					} = await createPackage({
+						pkg: {
+							'package.json': createPkgJson({
+								exports: {},
+							}),
+							'file.mjs': 'export default 123',
+						},
+					});
+
+					const packageExports = await getPackageEntryPoints(packagePath);
+					expect(packageExports).toStrictEqual({});
+
+					await fixture.rm();
+				});
+
 				test('null', async () => {
 					const {
 						fixture,
@@ -130,6 +149,87 @@ export default testSuite(({ describe }) => {
 				});
 
 				describe('fallback array', ({ test }) => {
+					test('all entries are protocol strings', async () => {
+						const {
+							fixture,
+							packagePath,
+						} = await createPackage({
+							pkg: {
+								'package.json': createPkgJson({
+									exports: {
+										'.': [
+											'protocol:./file-a.mjs',
+											'another-protocol:./file-b.mjs',
+										],
+									},
+								}),
+								'file-a.mjs': 'export default 123',
+								'file-b.mjs': 'export default 123',
+							},
+						});
+
+						const packageExports = await getPackageEntryPoints(packagePath);
+						expect(packageExports).toStrictEqual({});
+
+						await fixture.rm();
+					});
+
+					test('protocol string with valid fallback', async () => {
+						const {
+							fixture,
+							packagePath,
+							assertSubpath,
+						} = await createPackage({
+							pkg: {
+								'package.json': createPkgJson({
+									exports: {
+										'.': [
+											'protocol:./file-b.mjs',
+											'./file-a.mjs',
+										],
+									},
+								}),
+								'file-a.mjs': 'export default 123',
+								'file-b.mjs': 'export default 123',
+							},
+						});
+
+						expect(await assertSubpath('pkg', [])).toMatch('/file-a.mjs');
+
+						const packageExports = await getPackageEntryPoints(packagePath);
+						expect(packageExports).toStrictEqual({
+							'.': [
+								[['default'], './file-a.mjs'],
+							],
+						});
+
+						await fixture.rm();
+					});
+
+					test('all files in fallback array are missing', async () => {
+						const {
+							fixture,
+							packagePath,
+						} = await createPackage({
+							pkg: {
+								'package.json': createPkgJson({
+									exports: {
+										'.': [
+											'./missing1.mjs',
+											'./missing2.mjs',
+											'./missing3.mjs',
+										],
+									},
+								}),
+							},
+						});
+
+						const packageExports = await getPackageEntryPoints(packagePath);
+						expect(packageExports).toStrictEqual({});
+
+						await fixture.rm();
+					});
+
 					test('strings', async () => {
 						const {
 							fixture,

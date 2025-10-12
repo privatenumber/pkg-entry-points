@@ -104,6 +104,35 @@ export default testSuite(({ describe }) => {
 				});
 
 				describe('stars', ({ test }) => {
+					test('empty star match in pattern', async () => {
+						const {
+							fixture,
+							packagePath,
+						} = await createPackage({
+							pkg: {
+								'package.json': createPkgJson({
+									exports: {
+										'./prefix*.suffix': './prefix*.suffix',
+									},
+								}),
+								'prefix.suffix': 'module.exports = 123',
+								'prefixa.suffix': 'module.exports = 123',
+							},
+						});
+
+						const packageExports = await getPackageEntryPoints(packagePath);
+						expect(packageExports).toStrictEqual({
+							'./prefix.suffix': [
+								[['default'], './prefix.suffix'],
+							],
+							'./prefixa.suffix': [
+								[['default'], './prefixa.suffix'],
+							],
+						});
+
+						await fixture.rm();
+					});
+
 					test('star with no suffix', async () => {
 						const {
 							fixture,

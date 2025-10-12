@@ -50,9 +50,9 @@ const getConditions: GetConditions = (
 				conditions[conditionsKey] = packageFiles
 					.map((filePath) => {
 						const starValue = pathMatches(pathMatcher, filePath);
-						return starValue && [filePath, starValue];
+						return starValue !== undefined && [filePath, starValue];
 					})
-					.filter((starExport): starExport is [string, string] => starExport !== undefined);
+					.filter((starExport): starExport is [string, string] => starExport !== false);
 			} else if (packageFiles.includes(exports)) {
 				conditions[conditionsKey] = [exports];
 			}
@@ -98,6 +98,10 @@ const analyzeExportsWithFiles = (
 	}
 
 	let keys = Object.keys(exports);
+	if (keys.length === 0) {
+		return {};
+	}
+
 	const isPathsObject = keys[0][0] === '.';
 	if (!isPathsObject) {
 		exports = { '.': exports };

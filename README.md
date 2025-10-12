@@ -457,6 +457,74 @@ Entry-points evaluated from the [`typescript` package](https://github.com/micros
 
 ## API
 
+### analyzeExports(exports, packageFiles?)
+
+Returns: `PackageEntryPoints`
+
+Type definitions:
+```ts
+type PackageEntryPoints = {
+    [subpath: string]: ConditionToPath[]
+}
+
+type ConditionToPath = [conditions: string[], internalPath: string]
+```
+
+#### Description
+Analyzes a `package.json` exports field and returns all entry-points.
+
+This function operates in two modes:
+
+**Symbolic mode** (when `packageFiles` is omitted or empty):
+- Wildcard patterns are returned as-is with the pattern itself
+- Static paths are accepted without validation
+- Useful for analysis tools and playgrounds that don't have access to the filesystem
+
+**Concrete mode** (when `packageFiles` is provided):
+- Wildcard patterns are matched against the provided files
+- Static paths are validated against the file list
+- Only matching entry-points are returned
+
+#### Parameters
+
+- `exports`
+
+    Type: `PackageJson.Exports`
+
+    Required
+
+    The exports field from `package.json`.
+
+- `packageFiles`
+
+    Type: `string[]`
+
+    Optional
+
+    Array of file paths in the package. When omitted, runs in symbolic mode.
+
+#### Example
+
+```ts
+import { analyzeExports } from 'pkg-entry-points'
+
+// Symbolic mode: wildcards returned as patterns
+const symbolicResult = analyzeExports({
+    './dist/*.js': './dist/*.js'
+})
+// { './dist/*.js': [[['default'], './dist/*.js']] }
+
+// Concrete mode: wildcards matched against files
+const concreteResult = analyzeExports(
+    { './dist/*.js': './dist/*.js' },
+    ['./dist/index.js', './dist/utils.js']
+)
+// {
+//     './dist/index.js': [[['default'], './dist/index.js']],
+//     './dist/utils.js': [[['default'], './dist/utils.js']]
+// }
+```
+
 ### getPackageEntryPoints(packagePath, fs?)
 
 Returns: `Promise<PackageEntryPoints>`
@@ -496,6 +564,32 @@ If the package does not have an `exports` property, it will return an object whe
     Default: `fs.promises`
 
     The file-system to use. Defaults to Node.js's `fs/promises` module.
+
+### getPackageEntryPointsSync(packagePath, fs?)
+
+Returns: `PackageEntryPoints`
+
+Synchronous version of `getPackageEntryPoints()`.
+
+#### Parameters
+
+- `packagePath`
+
+    Type: `string`
+
+    Required
+
+    The path to the package to get the exports for.
+
+- `fs`
+
+    Type: `typeof import('fs')`
+
+    Optional
+
+    Default: `fs`
+
+    The file-system to use. Defaults to Node.js's `fs` module.
 
 
 ## Sponsors

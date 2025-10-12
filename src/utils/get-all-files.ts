@@ -8,7 +8,7 @@ export const getAllFiles = async (
 ): Promise<string[]> => {
 	const directoryFiles = await fs.readdir(directoryPath);
 	const fileTree = await Promise.all(
-		directoryFiles.map(async (fileName) => {
+		directoryFiles.filter(fileName => fileName !== 'node_modules').map(async (fileName) => {
 			const filePath = path.join(directoryPath, fileName);
 			const stat = await fs.stat(filePath);
 

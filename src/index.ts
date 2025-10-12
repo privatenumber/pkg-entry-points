@@ -48,14 +48,20 @@ const getConditions: GetConditions = (
 			if (exports === null) {
 				conditions[conditionsKey] = exports;
 			} else if (exports.includes(STAR)) {
-				const pathMatcher = createPathMatcher(exports);
-				conditions[conditionsKey] = packageFiles
-					.map((filePath) => {
-						const starValue = pathMatches(pathMatcher, filePath);
-						return starValue !== undefined && [filePath, starValue];
-					})
-					.filter((starExport): starExport is StarMatch => starExport !== false);
-			} else if (packageFiles.includes(exports)) {
+				if (packageFiles.length === 0) {
+					// Symbolic mode: return pattern as-is with '*' marker
+					conditions[conditionsKey] = [[exports, '*']];
+				} else {
+					// Concrete mode: match against actual files
+					const pathMatcher = createPathMatcher(exports);
+					conditions[conditionsKey] = packageFiles
+						.map((filePath) => {
+							const starValue = pathMatches(pathMatcher, filePath);
+							return starValue !== undefined && [filePath, starValue];
+						})
+						.filter((starExport): starExport is StarMatch => starExport !== false);
+				}
+			} else if (packageFiles.length === 0 || packageFiles.includes(exports)) {
 				conditions[conditionsKey] = [exports];
 			}
 		}
@@ -234,6 +240,31 @@ const analyzeLegacyExports = (
 	return legacyExports;
 };
 
+/**
+ * Analyze package.json exports field and return all entry points.
+ *
+ * @param exports - The exports field from package.json
+ * @param packageFiles - Optional array of file paths. When omitted, runs in symbolic mode.
+ * @returns Map of subpaths to conditions and internal paths
+ *
+ * @example
+ * // Symbolic mode (no packageFiles): Wildcards return pattern itself
+ * analyzeExports({ './dist/*.js': './dist/*.js' })
+ * // { './dist/*.js': [[['default'], './dist/*.js']] }
+ *
+ * @example
+ * // Concrete mode (with packageFiles): Wildcards matched against files
+ * analyzeExports({ './dist/*.js': './dist/*.js' }, ['./dist/index.js'])
+ * // { './dist/index.js': [[['default'], './dist/index.js']] }
+ */
+export const analyzeExports = (
+	exports: PackageJson.Exports,
+	packageFiles?: string[],
+): PackageEntryPoints => {
+	const files = packageFiles ?? [];
+	return analyzeExportsWithFiles(exports, files);
+};
+
 export const getPackageEntryPoints = async (
 	packagePath: string,
 	fs = _fs.promises,
@@ -243,7 +274,7 @@ export const getPackageEntryPoints = async (
 	const packageFiles = await getAllFiles(fs, packagePath);
 
 	if (packageJson.exports !== undefined) {
-		return analyzeExportsWithFiles(packageJson.exports, packageFiles);
+		return analyzeExports(packageJson.exports, packageFiles);
 	}
 
 	return analyzeLegacyExports(packageJson, packageFiles);
@@ -258,7 +289,7 @@ export const getPackageEntryPointsSync = (
 	const packageFiles = getAllFilesSync(fs, packagePath);
 
 	if (packageJson.exports !== undefined) {
-		return analyzeExportsWithFiles(packageJson.exports, packageFiles);
+		return analyzeExports(packageJson.exports, packageFiles);
 	}
 
 	return analyzeLegacyExports(packageJson, packageFiles);

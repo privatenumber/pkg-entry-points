@@ -59,7 +59,7 @@
 		"fs-fixture": "^2.9.0",
 		"lintroll": "^1.23.1",
 		"manten": "^1.5.0",
-		"pkgroll": "^2.18.0",
+		"pkgroll": "^2.18.1",
 		"tsx": "^4.20.6",
 		"type-fest": "^5.0.1",
 		"typescript": "^5.9.3"

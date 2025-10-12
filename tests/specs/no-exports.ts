@@ -101,6 +101,61 @@ export default testSuite(({ describe }) => {
 					await fixture.rm();
 				});
 
+				test('includes hidden files', async () => {
+					const {
+						fixture,
+						packagePath,
+					} = await createPackage({
+						pkg: {
+							'package.json': createPkgJson({
+								main: './index.js',
+							}),
+							'index.js': 'module.exports = 123',
+							'.gitignore': 'node_modules',
+							'.npmrc': 'registry=https://registry.npmjs.org',
+							'.hidden.js': 'module.exports = 456',
+						},
+					});
+
+					const packageExports = await getPackageEntryPoints(packagePath);
+					expect(packageExports).toStrictEqual({
+						'.': [
+							[['default'], './index.js'],
+						],
+						'./index.js': [
+							[['default'], './index.js'],
+						],
+						'./package.json': [
+							[['default'], './package.json'],
+						],
+						'./.hidden.js': [
+							[['default'], './.hidden.js'],
+						],
+					});
+
+					await fixture.rm();
+				});
+
+				test('empty package with only package.json', async () => {
+					const {
+						fixture,
+						packagePath,
+					} = await createPackage({
+						pkg: {
+							'package.json': createPkgJson({}),
+						},
+					});
+
+					const packageExports = await getPackageEntryPoints(packagePath);
+					expect(packageExports).toStrictEqual({
+						'./package.json': [
+							[['default'], './package.json'],
+						],
+					});
+
+					await fixture.rm();
+				});
+
 				test('should exclude node_modules subdirectory', async () => {
 					const {
 						fixture,

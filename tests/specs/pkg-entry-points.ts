@@ -278,6 +278,38 @@ export default testSuite(({ describe }) => {
 						await fixture.rm();
 					});
 
+					test('multiple patterns matching same file', async () => {
+						const {
+							fixture,
+							packagePath,
+						} = await createPackage({
+							pkg: {
+								'package.json': createPkgJson({
+									exports: {
+										'./dist/*.js': './dist/*.js',
+										'./dist/*': './dist/*',
+									},
+								}),
+								dist: {
+									'file.js': 'module.exports = 123',
+									'other.mjs': 'export default 456',
+								},
+							},
+						});
+
+						const packageExports = await getPackageEntryPoints(packagePath);
+						expect(packageExports).toStrictEqual({
+							'./dist/file.js': [
+								[['default'], './dist/file.js'],
+							],
+							'./dist/other.mjs': [
+								[['default'], './dist/other.mjs'],
+							],
+						});
+
+						await fixture.rm();
+					});
+
 					test('file with star in name', async () => {
 						const {
 							fixture,

@@ -73,6 +73,39 @@ export default testSuite(({ describe }) => {
 				});
 
 				describe('conditions object', ({ test }) => {
+					test('deeply nested conditions (5 levels)', async () => {
+						const {
+							fixture,
+							packagePath,
+						} = await createPackage({
+							pkg: {
+								'package.json': createPkgJson({
+									exports: {
+										a: {
+											b: {
+												c: {
+													d: {
+														e: './file.mjs',
+													},
+												},
+											},
+										},
+									},
+								}),
+								'file.mjs': 'export default 123',
+							},
+						});
+
+						const packageExports = await getPackageEntryPoints(packagePath);
+						expect(packageExports).toStrictEqual({
+							'.': [
+								[['a', 'b', 'c', 'd', 'e'], './file.mjs'],
+							],
+						});
+
+						await fixture.rm();
+					});
+
 					test('conditions object', async () => {
 						const {
 							fixture,

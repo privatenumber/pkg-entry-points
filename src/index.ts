@@ -10,8 +10,10 @@ export type PackageEntryPoints = {
 	[subpath: string]: ConditionToPath[];
 };
 
+type StarMatch = [filePath: string, starMatch: string];
+
 type ConditionsMap = {
-	[conditions: string]: (string | [filePath: string, starMatch: string])[] | null;
+	[conditions: string]: (string | StarMatch)[] | null;
 };
 
 type GetConditions = {
@@ -52,7 +54,7 @@ const getConditions: GetConditions = (
 						const starValue = pathMatches(pathMatcher, filePath);
 						return starValue !== undefined && [filePath, starValue];
 					})
-					.filter((starExport): starExport is [string, string] => starExport !== false);
+					.filter((starExport): starExport is StarMatch => starExport !== false);
 			} else if (packageFiles.includes(exports)) {
 				conditions[conditionsKey] = [exports];
 			}
@@ -144,7 +146,7 @@ const analyzeExportsWithFiles = (
 						);
 
 						if (hasStar) {
-							[internalPath] = internalPath;
+							internalPath = (internalPath as StarMatch)[0];
 						}
 					}
 

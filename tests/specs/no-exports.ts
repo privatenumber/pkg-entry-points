@@ -1,18 +1,14 @@
 import { testSuite, expect } from 'manten';
-import { createPackage, createPkgJson, testScenarios } from '../utils.js';
+import { createPackage, createPackageJson, testScenarios } from '../utils.js';
 
 export default testSuite(({ describe }) => {
 	for (const { scenario, getPackageEntryPoints } of testScenarios) {
 		describe(scenario, ({ describe }) => {
 			describe('no exports', ({ test }) => {
 				test('no exports should list all files', async () => {
-					const {
-						fixture,
-						assertSubpath,
-						packagePath,
-					} = await createPackage({
+					await using pkg = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								main: './main.mjs',
 							}),
 							'README.md': 'hello',
@@ -23,9 +19,9 @@ export default testSuite(({ describe }) => {
 						},
 					});
 
-					await assertSubpath('pkg/a.mjs', []);
+					await pkg.assertSubpath('pkg/a.mjs', []);
 
-					const packageExports = await getPackageEntryPoints(packagePath);
+					const packageExports = await getPackageEntryPoints(pkg.packagePath);
 					expect(packageExports).toStrictEqual({
 						'.': [
 							[['default'], './main.mjs'],
@@ -38,25 +34,19 @@ export default testSuite(({ describe }) => {
 						],
 						'./types.d.ts': [[['default'], './types.d.ts']],
 					});
-
-					await fixture.rm();
 				});
 
 				test('no main should fallback to index.js', async () => {
-					const {
-						fixture,
-						assertSubpath,
-						packagePath,
-					} = await createPackage({
+					await using pkg = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({}),
+							'package.json': createPackageJson({}),
 							'index.js': 'module.exports = 123',
 						},
 					});
 
-					await assertSubpath('pkg', []);
+					await pkg.assertSubpath('pkg', []);
 
-					const packageExports = await getPackageEntryPoints(packagePath);
+					const packageExports = await getPackageEntryPoints(pkg.packagePath);
 					expect(packageExports).toStrictEqual({
 						'.': [
 							[['default'], './index.js'],
@@ -68,27 +58,21 @@ export default testSuite(({ describe }) => {
 							[['default'], './package.json'],
 						],
 					});
-
-					await fixture.rm();
 				});
 
 				test('invalid main', async () => {
-					const {
-						fixture,
-						assertSubpath,
-						packagePath,
-					} = await createPackage({
+					await using pkg = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								main: './missing-file.js',
 							}),
 							'index.js': 'module.exports = 123',
 						},
 					});
 
-					await assertSubpath('pkg', []);
+					await pkg.assertSubpath('pkg', []);
 
-					const packageExports = await getPackageEntryPoints(packagePath);
+					const packageExports = await getPackageEntryPoints(pkg.packagePath);
 					expect(packageExports).toStrictEqual({
 						'./index.js': [
 							[['default'], './index.js'],
@@ -97,17 +81,12 @@ export default testSuite(({ describe }) => {
 							[['default'], './package.json'],
 						],
 					});
-
-					await fixture.rm();
 				});
 
 				test('includes hidden files', async () => {
-					const {
-						fixture,
-						packagePath,
-					} = await createPackage({
+					await using pkg = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								main: './index.js',
 							}),
 							'index.js': 'module.exports = 123',
@@ -117,7 +96,7 @@ export default testSuite(({ describe }) => {
 						},
 					});
 
-					const packageExports = await getPackageEntryPoints(packagePath);
+					const packageExports = await getPackageEntryPoints(pkg.packagePath);
 					expect(packageExports).toStrictEqual({
 						'.': [
 							[['default'], './index.js'],
@@ -132,50 +111,40 @@ export default testSuite(({ describe }) => {
 							[['default'], './.hidden.js'],
 						],
 					});
-
-					await fixture.rm();
 				});
 
 				test('empty package with only package.json', async () => {
-					const {
-						fixture,
-						packagePath,
-					} = await createPackage({
+					await using pkg = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({}),
+							'package.json': createPackageJson({}),
 						},
 					});
 
-					const packageExports = await getPackageEntryPoints(packagePath);
+					const packageExports = await getPackageEntryPoints(pkg.packagePath);
 					expect(packageExports).toStrictEqual({
 						'./package.json': [
 							[['default'], './package.json'],
 						],
 					});
-
-					await fixture.rm();
 				});
 
 				test('should exclude node_modules subdirectory', async () => {
-					const {
-						fixture,
-						packagePath,
-					} = await createPackage({
+					await using pkg = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								main: './index.js',
 							}),
 							'index.js': 'module.exports = 123',
 							node_modules: {
 								'some-dep': {
-									'package.json': createPkgJson({}),
+									'package.json': createPackageJson({}),
 									'index.js': 'module.exports = 456',
 								},
 							},
 						},
 					});
 
-					const packageExports = await getPackageEntryPoints(packagePath);
+					const packageExports = await getPackageEntryPoints(pkg.packagePath);
 					expect(packageExports).toStrictEqual({
 						'.': [
 							[['default'], './index.js'],
@@ -187,19 +156,13 @@ export default testSuite(({ describe }) => {
 							[['default'], './package.json'],
 						],
 					});
-
-					await fixture.rm();
 				});
 
 				describe('extensionless main', ({ test }) => {
 					test('explicitly extensionless', async () => {
-						const {
-							fixture,
-							assertSubpath,
-							packagePath,
-						} = await createPackage({
+						await using pkg = await createPackage({
 							pkg: {
-								'package.json': createPkgJson({
+								'package.json': createPackageJson({
 									main: './file',
 								}),
 								file: 'module.exports = 123',
@@ -208,9 +171,9 @@ export default testSuite(({ describe }) => {
 							},
 						});
 
-						await assertSubpath('pkg', []);
+						await pkg.assertSubpath('pkg', []);
 
-						const packageExports = await getPackageEntryPoints(packagePath);
+						const packageExports = await getPackageEntryPoints(pkg.packagePath);
 						expect(packageExports).toStrictEqual({
 							'.': [
 								[['default'], './file'],
@@ -228,18 +191,12 @@ export default testSuite(({ describe }) => {
 								[['default'], './file.json'],
 							],
 						});
-
-						await fixture.rm();
 					});
 
 					test('implicitly .js', async () => {
-						const {
-							fixture,
-							assertSubpath,
-							packagePath,
-						} = await createPackage({
+						await using pkg = await createPackage({
 							pkg: {
-								'package.json': createPkgJson({
+								'package.json': createPackageJson({
 									main: './file',
 								}),
 								'file.js': 'module.exports = 123',
@@ -247,9 +204,9 @@ export default testSuite(({ describe }) => {
 							},
 						});
 
-						await assertSubpath('pkg', []);
+						await pkg.assertSubpath('pkg', []);
 
-						const packageExports = await getPackageEntryPoints(packagePath);
+						const packageExports = await getPackageEntryPoints(pkg.packagePath);
 						expect(packageExports).toStrictEqual({
 							'.': [
 								[['default'], './file.js'],
@@ -264,27 +221,21 @@ export default testSuite(({ describe }) => {
 								[['default'], './file.json'],
 							],
 						});
-
-						await fixture.rm();
 					});
 
 					test('implicitly .json', async () => {
-						const {
-							fixture,
-							assertSubpath,
-							packagePath,
-						} = await createPackage({
+						await using pkg = await createPackage({
 							pkg: {
-								'package.json': createPkgJson({
+								'package.json': createPackageJson({
 									main: './file',
 								}),
 								'file.json': 'export default 123',
 							},
 						});
 
-						await assertSubpath('pkg', []);
+						await pkg.assertSubpath('pkg', []);
 
-						const packageExports = await getPackageEntryPoints(packagePath);
+						const packageExports = await getPackageEntryPoints(pkg.packagePath);
 						expect(packageExports).toStrictEqual({
 							'.': [
 								[['default'], './file.json'],
@@ -296,8 +247,6 @@ export default testSuite(({ describe }) => {
 								[['default'], './file.json'],
 							],
 						});
-
-						await fixture.rm();
 					});
 				});
 			});

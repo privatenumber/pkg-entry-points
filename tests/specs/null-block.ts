@@ -1,5 +1,5 @@
 import { testSuite, expect } from 'manten';
-import { createPackage, createPkgJson, testScenarios } from '../utils.js';
+import { createPackage, createPackageJson, testScenarios } from '../utils.js';
 
 export default testSuite(({ describe }) => {
 	for (const { scenario, getPackageEntryPoints } of testScenarios) {
@@ -12,7 +12,7 @@ export default testSuite(({ describe }) => {
 						packagePath,
 					} = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								exports: {
 									'./a': null,
 									'./*': './*.mjs',
@@ -45,7 +45,7 @@ export default testSuite(({ describe }) => {
 						packagePath,
 					} = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								exports: {
 									'condition-a': './a.mjs',
 									default: null,
@@ -77,7 +77,7 @@ export default testSuite(({ describe }) => {
 						packagePath,
 					} = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								exports: {
 									'./*.js': './*.js',
 									'./internal/*': null,
@@ -112,7 +112,7 @@ export default testSuite(({ describe }) => {
 						packagePath,
 					} = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								exports: {
 									'./*': {
 										a: null,
@@ -150,7 +150,7 @@ export default testSuite(({ describe }) => {
 						packagePath,
 					} = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								exports: {
 									'./*': './dir/*/file-*-*.mjs',
 									'./a': [{

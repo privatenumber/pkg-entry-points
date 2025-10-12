@@ -1,5 +1,5 @@
 import { testSuite, expect } from 'manten';
-import { createPackage, createPkgJson } from '../utils.js';
+import { createPackage, createPackageJson } from '../utils.js';
 
 export default testSuite(({ describe }) => {
 	describe('Node.js resolve behavior', ({ test, describe }) => {
@@ -10,7 +10,7 @@ export default testSuite(({ describe }) => {
 				assertSubpath,
 			} = await createPackage({
 				pkg: {
-					'package.json': createPkgJson({
+					'package.json': createPackageJson({
 						exports: {
 							'.': {
 								[condition]: './file.mjs',
@@ -33,7 +33,7 @@ export default testSuite(({ describe }) => {
 				assertSubpath,
 			} = await createPackage({
 				pkg: {
-					'package.json': createPkgJson({
+					'package.json': createPackageJson({
 						exports: {
 							'./a': {
 								someCondition: './b/import.mjs',
@@ -58,7 +58,7 @@ export default testSuite(({ describe }) => {
 				assertSubpath,
 			} = await createPackage({
 				pkg: {
-					'package.json': createPkgJson({
+					'package.json': createPackageJson({
 						exports: {
 							'.': {
 								a: {
@@ -87,7 +87,7 @@ export default testSuite(({ describe }) => {
 				assertSubpath,
 			} = await createPackage({
 				pkg: {
-					'package.json': createPkgJson({
+					'package.json': createPackageJson({
 						exports: {
 							'./*': './lib/*.mjs',
 							'./a': null,
@@ -112,7 +112,7 @@ export default testSuite(({ describe }) => {
 				assertSubpath,
 			} = await createPackage({
 				pkg: {
-					'package.json': createPkgJson({
+					'package.json': createPackageJson({
 						exports: {
 							'./*': './lib/*.mjs',
 							'./a': {
@@ -141,7 +141,7 @@ export default testSuite(({ describe }) => {
 				assertSubpath,
 			} = await createPackage({
 				pkg: {
-					'package.json': createPkgJson({
+					'package.json': createPackageJson({
 						// @ts-expect-error invalid exports
 						exports: {
 							'.': [
@@ -169,7 +169,7 @@ export default testSuite(({ describe }) => {
 				assertSubpath,
 			} = await createPackage({
 				pkg: {
-					'package.json': createPkgJson({
+					'package.json': createPackageJson({
 						exports: {
 							'./*': '*.mjs',
 						},
@@ -190,7 +190,7 @@ export default testSuite(({ describe }) => {
 				assertSubpath,
 			} = await createPackage({
 				pkg: {
-					'package.json': createPkgJson({
+					'package.json': createPackageJson({
 						exports: {
 							'.': './a*.mjs',
 						},
@@ -210,7 +210,7 @@ export default testSuite(({ describe }) => {
 				assertSubpath,
 			} = await createPackage({
 				pkg: {
-					'package.json': createPkgJson({
+					'package.json': createPackageJson({
 						exports: {
 							'./*': './a*.mjs',
 						},
@@ -231,7 +231,7 @@ export default testSuite(({ describe }) => {
 					assertSubpath,
 				} = await createPackage({
 					pkg: {
-						'package.json': createPkgJson({
+						'package.json': createPackageJson({
 							main: 'a',
 						}),
 						a: 'module.exports = 123',
@@ -251,7 +251,7 @@ export default testSuite(({ describe }) => {
 					assertSubpath,
 				} = await createPackage({
 					pkg: {
-						'package.json': createPkgJson({
+						'package.json': createPackageJson({
 							main: 'a',
 						}),
 						'a.json': '{}',
@@ -270,7 +270,7 @@ export default testSuite(({ describe }) => {
 					assertSubpath,
 				} = await createPackage({
 					pkg: {
-						'package.json': createPkgJson({
+						'package.json': createPackageJson({
 							main: 'a',
 						}),
 						'a.json': '{}',

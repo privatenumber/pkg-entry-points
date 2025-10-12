@@ -4,7 +4,7 @@ import type { PackageJson } from 'type-fest';
 import { execaNode } from 'execa';
 import { getPackageEntryPoints, getPackageEntryPointsSync } from '#pkg-entry-points';
 
-export const createPkgJson = (
+export const createPackageJson = (
 	pkgJson: PackageJson.PackageJsonStandard,
 ) => JSON.stringify(pkgJson);
 
@@ -47,6 +47,7 @@ export const createPackage = async (
 		fixture,
 		packagePath: path.join(fixture.path, 'node_modules/pkg'),
 		assertSubpath,
+		[Symbol.asyncDispose]: () => fixture.rm(),
 	};
 };
 

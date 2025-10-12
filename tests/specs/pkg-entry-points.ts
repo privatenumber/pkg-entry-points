@@ -1,35 +1,27 @@
 import { testSuite, expect } from 'manten';
-import { createPackage, createPkgJson, testScenarios } from '../utils.js';
+import { createPackage, createPackageJson, testScenarios } from '../utils.js';
 
 export default testSuite(({ describe }) => {
 	for (const { scenario, getPackageEntryPoints } of testScenarios) {
 		describe(scenario, ({ describe }) => {
 			describe('pkg-entry-points', ({ test, describe }) => {
 				test('missing files', async () => {
-					const {
-						fixture,
-						packagePath,
-					} = await createPackage({
+					await using pkg = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								exports: './file.js',
 							}),
 						},
 					});
 
-					const packageExports = await getPackageEntryPoints(packagePath);
+					const packageExports = await getPackageEntryPoints(pkg.packagePath);
 					expect(packageExports).toStrictEqual({});
-
-					await fixture.rm();
 				});
 
 				test('missing files in star to star', async () => {
-					const {
-						fixture,
-						packagePath,
-					} = await createPackage({
+					await using pkg = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								exports: {
 									'./*': './*.js',
 								},
@@ -37,19 +29,14 @@ export default testSuite(({ describe }) => {
 						},
 					});
 
-					const packageExports = await getPackageEntryPoints(packagePath);
+					const packageExports = await getPackageEntryPoints(pkg.packagePath);
 					expect(packageExports).toStrictEqual({});
-
-					await fixture.rm();
 				});
 
 				test('missing files in star to static', async () => {
-					const {
-						fixture,
-						packagePath,
-					} = await createPackage({
+					await using pkg = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								exports: {
 									'./*': './a.js',
 								},
@@ -57,20 +44,14 @@ export default testSuite(({ describe }) => {
 						},
 					});
 
-					const packageExports = await getPackageEntryPoints(packagePath);
+					const packageExports = await getPackageEntryPoints(pkg.packagePath);
 					expect(packageExports).toStrictEqual({});
-
-					await fixture.rm();
 				});
 
 				test('handles fallback conditions', async () => {
-					const {
-						fixture,
-						assertSubpath,
-						packagePath,
-					} = await createPackage({
+					await using pkg = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								exports: {
 									'.': [
 										{
@@ -88,29 +69,24 @@ export default testSuite(({ describe }) => {
 						},
 					});
 
-					expect(await assertSubpath('pkg', ['a'])).toMatch('/a.mjs');
-					expect(await assertSubpath('pkg', ['b'])).toMatch('/b.mjs');
-					await expect(() => assertSubpath('pkg', [])).rejects.toThrowError('ERR_PACKAGE_PATH_NOT_EXPORTED');
+					expect(await pkg.assertSubpath('pkg', ['a'])).toMatch('/a.mjs');
+					expect(await pkg.assertSubpath('pkg', ['b'])).toMatch('/b.mjs');
+					await expect(() => pkg.assertSubpath('pkg', [])).rejects.toThrowError('ERR_PACKAGE_PATH_NOT_EXPORTED');
 
-					const packageExports = await getPackageEntryPoints(packagePath);
+					const packageExports = await getPackageEntryPoints(pkg.packagePath);
 					expect(packageExports).toStrictEqual({
 						'.': [
 							[['b'], './b.mjs'],
 							[['a'], './a.mjs'],
 						],
 					});
-
-					await fixture.rm();
 				});
 
 				describe('stars', ({ test }) => {
 					test('empty star match in pattern', async () => {
-						const {
-							fixture,
-							packagePath,
-						} = await createPackage({
+						await using pkg = await createPackage({
 							pkg: {
-								'package.json': createPkgJson({
+								'package.json': createPackageJson({
 									exports: {
 										'./prefix*.suffix': './prefix*.suffix',
 									},
@@ -120,7 +96,7 @@ export default testSuite(({ describe }) => {
 							},
 						});
 
-						const packageExports = await getPackageEntryPoints(packagePath);
+						const packageExports = await getPackageEntryPoints(pkg.packagePath);
 						expect(packageExports).toStrictEqual({
 							'./prefix.suffix': [
 								[['default'], './prefix.suffix'],
@@ -129,18 +105,12 @@ export default testSuite(({ describe }) => {
 								[['default'], './prefixa.suffix'],
 							],
 						});
-
-						await fixture.rm();
 					});
 
 					test('star with no suffix', async () => {
-						const {
-							fixture,
-							assertSubpath,
-							packagePath,
-						} = await createPackage({
+						await using pkg = await createPackage({
 							pkg: {
-								'package.json': createPkgJson({
+								'package.json': createPackageJson({
 									exports: {
 										'./feature/*': './feature/*',
 									},
@@ -151,26 +121,20 @@ export default testSuite(({ describe }) => {
 							},
 						});
 
-						await assertSubpath('pkg/feature/file-a.js', []);
+						await pkg.assertSubpath('pkg/feature/file-a.js', []);
 
-						const packageExports = await getPackageEntryPoints(packagePath);
+						const packageExports = await getPackageEntryPoints(pkg.packagePath);
 						expect(packageExports).toStrictEqual({
 							'./feature/file-a.js': [
 								[['default'], './feature/file-a.js'],
 							],
 						});
-
-						await fixture.rm();
 					});
 
 					test('exports = multi path - conditions object', async () => {
-						const {
-							fixture,
-							assertSubpath,
-							packagePath,
-						} = await createPackage({
+						await using pkg = await createPackage({
 							pkg: {
-								'package.json': createPkgJson({
+								'package.json': createPackageJson({
 									exports: {
 										'.': {
 											conditionA: [
@@ -208,14 +172,14 @@ export default testSuite(({ describe }) => {
 							},
 						});
 
-						await assertSubpath('pkg', ['conditionA']);
-						await assertSubpath('pkg', ['condition-b', 'conditionC']);
-						await assertSubpath('pkg/subpath', ['condition-d']);
-						await assertSubpath('pkg/subpath', ['condition-e']);
-						await assertSubpath('pkg/subpath', ['condition-e', 'conditionA']);
-						await assertSubpath('pkg/subpath', ['condition-e', 'conditionB']);
+						await pkg.assertSubpath('pkg', ['conditionA']);
+						await pkg.assertSubpath('pkg', ['condition-b', 'conditionC']);
+						await pkg.assertSubpath('pkg/subpath', ['condition-d']);
+						await pkg.assertSubpath('pkg/subpath', ['condition-e']);
+						await pkg.assertSubpath('pkg/subpath', ['condition-e', 'conditionA']);
+						await pkg.assertSubpath('pkg/subpath', ['condition-e', 'conditionB']);
 
-						const packageExports = await getPackageEntryPoints(packagePath);
+						const packageExports = await getPackageEntryPoints(pkg.packagePath);
 						expect(packageExports).toStrictEqual({
 							'.': [
 								[['conditionA'], './file.mjs'],
@@ -230,19 +194,13 @@ export default testSuite(({ describe }) => {
 							],
 							'./feature/file-a.js': [[['default'], './feature/file-a.js']],
 						});
-
-						await fixture.rm();
 					});
 
 					// Pointless test?
 					test('replace stars', async () => {
-						const {
-							fixture,
-							assertSubpath,
-							packagePath,
-						} = await createPackage({
+						await using pkg = await createPackage({
 							pkg: {
-								'package.json': createPkgJson({
+								'package.json': createPackageJson({
 									exports: {
 										'./*': './dir/*/file-*-*.mjs',
 									},
@@ -257,9 +215,9 @@ export default testSuite(({ describe }) => {
 							},
 						});
 
-						await assertSubpath('pkg/a', []);
+						await pkg.assertSubpath('pkg/a', []);
 
-						const packageExports = await getPackageEntryPoints(packagePath);
+						const packageExports = await getPackageEntryPoints(pkg.packagePath);
 						expect(packageExports).toStrictEqual({
 							'./a': [
 								[['default'], './dir/a/file-a-a.mjs'],
@@ -274,17 +232,12 @@ export default testSuite(({ describe }) => {
 								[['default'], './dir/d/file-d-d.mjs'],
 							],
 						});
-
-						await fixture.rm();
 					});
 
 					test('multiple patterns matching same file', async () => {
-						const {
-							fixture,
-							packagePath,
-						} = await createPackage({
+						await using pkg = await createPackage({
 							pkg: {
-								'package.json': createPkgJson({
+								'package.json': createPackageJson({
 									exports: {
 										'./dist/*.js': './dist/*.js',
 										'./dist/*': './dist/*',
@@ -297,7 +250,7 @@ export default testSuite(({ describe }) => {
 							},
 						});
 
-						const packageExports = await getPackageEntryPoints(packagePath);
+						const packageExports = await getPackageEntryPoints(pkg.packagePath);
 						expect(packageExports).toStrictEqual({
 							'./dist/file.js': [
 								[['default'], './dist/file.js'],
@@ -306,18 +259,12 @@ export default testSuite(({ describe }) => {
 								[['default'], './dist/other.mjs'],
 							],
 						});
-
-						await fixture.rm();
 					});
 
 					test('file with star in name', async () => {
-						const {
-							fixture,
-							assertSubpath,
-							packagePath,
-						} = await createPackage({
+						await using pkg = await createPackage({
 							pkg: {
-								'package.json': createPkgJson({
+								'package.json': createPackageJson({
 									exports: {
 										'.': './file-*.js',
 										'./*': './file-*.js',
@@ -327,10 +274,10 @@ export default testSuite(({ describe }) => {
 							},
 						});
 
-						await expect(() => assertSubpath('pkg/a', [])).rejects.toThrowError('ERR_MODULE_NOT_FOUND');
-						expect(await assertSubpath('pkg/*', [])).toMatch('/file-*.js');
+						await expect(() => pkg.assertSubpath('pkg/a', [])).rejects.toThrowError('ERR_MODULE_NOT_FOUND');
+						expect(await pkg.assertSubpath('pkg/*', [])).toMatch('/file-*.js');
 
-						const packageExports = await getPackageEntryPoints(packagePath);
+						const packageExports = await getPackageEntryPoints(pkg.packagePath);
 						expect(packageExports).toStrictEqual({
 							'.': [
 								[['default'], './file-*.js'],
@@ -339,20 +286,14 @@ export default testSuite(({ describe }) => {
 								[['default'], './file-*.js'],
 							],
 						});
-
-						await fixture.rm();
 					});
 				});
 
 				describe('wildcard -> static path', ({ test }) => {
 					test('replace with underscore', async () => {
-						const {
-							fixture,
-							assertSubpath,
-							packagePath,
-						} = await createPackage({
+						await using pkg = await createPackage({
 							pkg: {
-								'package.json': createPkgJson({
+								'package.json': createPackageJson({
 									exports: {
 										'./whatever*.whatever': './b/file-b.mjs',
 									},
@@ -364,17 +305,15 @@ export default testSuite(({ describe }) => {
 							},
 						});
 
-						await assertSubpath('pkg/whatever_.whatever', []);
+						await pkg.assertSubpath('pkg/whatever_.whatever', []);
 
-						const packageExports = await getPackageEntryPoints(packagePath);
+						const packageExports = await getPackageEntryPoints(pkg.packagePath);
 						expect(packageExports).toStrictEqual({
 
 							'./whatever_.whatever': [
 								[['default'], './b/file-b.mjs'],
 							],
 						});
-
-						await fixture.rm();
 					});
 				});
 			});

@@ -1,5 +1,5 @@
 import { testSuite, expect } from 'manten';
-import { createPackage, createPkgJson, testScenarios } from '../utils.js';
+import { createPackage, createPackageJson, testScenarios } from '../utils.js';
 
 export default testSuite(({ describe }) => {
 	for (const { scenario, getPackageEntryPoints } of testScenarios) {
@@ -12,7 +12,7 @@ export default testSuite(({ describe }) => {
 						assertSubpath,
 					} = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								exports: {
 									conditionA: {
 										conditionB: './file1.mjs',
@@ -47,7 +47,7 @@ export default testSuite(({ describe }) => {
 						assertSubpath,
 					} = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								exports: {
 									conditionA: {
 										conditionB: null,
@@ -76,7 +76,7 @@ export default testSuite(({ describe }) => {
 						assertSubpath,
 					} = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								exports: {
 									conditionA: {
 										conditionB: './file.mjs',
@@ -108,7 +108,7 @@ export default testSuite(({ describe }) => {
 						assertSubpath,
 					} = await createPackage({
 						pkg: {
-							'package.json': createPkgJson({
+							'package.json': createPackageJson({
 								exports: {
 									conditionA: {
 										conditionB: null,

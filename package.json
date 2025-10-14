@@ -53,7 +53,7 @@
 		"prepack": "pnpm build && clean-pkg-json"
 	},
 	"engines": {
-		"node": ">=20.19.5"
+		"node": ">=22.20.0"
 	},
 	"devDependencies": {
 		"@types/node": "^22.18.10",

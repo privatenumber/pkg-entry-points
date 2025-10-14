@@ -74,5 +74,31 @@ export default testSuite(({ describe }) => {
 				},
 			]);
 		});
+
+		test('multiple subpaths', () => {
+			const result = parsePackageExports({
+				'.': './index.js',
+				'./utils': './utils.js',
+				'./package.json': './package.json',
+			});
+
+			expect(result).toStrictEqual([
+				{
+					subpath: '.',
+					target: './index.js',
+					conditions: ['default'],
+				},
+				{
+					subpath: './utils',
+					target: './utils.js',
+					conditions: ['default'],
+				},
+				{
+					subpath: './package.json',
+					target: './package.json',
+					conditions: ['default'],
+				},
+			]);
+		});
 	});
 });

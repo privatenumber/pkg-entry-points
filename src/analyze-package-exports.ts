@@ -162,6 +162,74 @@ const resolveAttempts = (
 };
 
 /**
+ * Normalize exports to always be an object with subpaths
+ */
+const normalizeExports = (
+	exports: PackageJson.Exports | undefined,
+): Record<string, PackageJson.Exports> | null => {
+	if (!exports || exports === null) {
+		return null;
+	}
+
+	if (typeof exports === 'string' || Array.isArray(exports)) {
+		return { '.': exports };
+	}
+
+	const keys = Object.keys(exports);
+	if (keys.length === 0) {
+		return null;
+	}
+
+	// Check if it's already a subpath object (keys start with '.')
+	if (keys[0][0] === '.') {
+		return exports as Record<string, PackageJson.Exports>;
+	}
+
+	// It's a conditions object at root
+	return { '.': exports };
+};
+
+/**
+ * Filter out blocked exports
+ */
+const filterBlockedExports = (
+	subpathConditions: Record<string, Record<string, string>>,
+	blocks: Array<[string | PathMatcher, string]>,
+): PackageEntryPoints => {
+	const unblockedExports: PackageEntryPoints = {};
+
+	for (const subpath in subpathConditions) {
+		if (!Object.hasOwn(subpathConditions, subpath)) {
+			continue;
+		}
+
+		const conditionsEntries = Object.entries(subpathConditions[subpath])
+			.filter(
+				([conditions]) => !blocks.some(
+					([blockPath, blockCondition]) => (
+						(
+							typeof blockPath === 'string'
+								? blockPath === subpath
+								: pathMatches(blockPath, subpath)
+						)
+						&& conditions === blockCondition
+					),
+				),
+			)
+			.map(
+				([conditions, internalPath]): [string[], string] => [JSON.parse(conditions), internalPath],
+			)
+			.sort(([conditionsA], [conditionsB]) => conditionsA.length - conditionsB.length);
+
+		if (conditionsEntries.length > 0) {
+			unblockedExports[subpath] = conditionsEntries;
+		}
+	}
+
+	return unblockedExports;
+};
+
+/**
  * Analyze exports with filesystem access.
  *
  * Instead of scanning all files upfront, this function:
@@ -173,26 +241,9 @@ export const analyzePackageExports = (
 	exports: PackageJson.Exports | undefined,
 	fs: FileSystemAccess,
 ): PackageEntryPoints => {
-	if (!exports || exports === null) {
+	const exportsObject = normalizeExports(exports);
+	if (!exportsObject) {
 		return {};
-	}
-
-	// Normalize exports to always be an object with subpaths
-	let exportsObject: Record<string, PackageJson.Exports>;
-	if (typeof exports === 'string' || Array.isArray(exports)) {
-		exportsObject = { '.': exports };
-	} else {
-		const keys = Object.keys(exports);
-		if (keys.length === 0) {
-			return {};
-		}
-		// Check if it's already a subpath object (keys start with '.')
-		if (keys[0][0] === '.') {
-			exportsObject = exports as Record<string, PackageJson.Exports>;
-		} else {
-			// It's a conditions object at root
-			exportsObject = { '.': exports };
-		}
 	}
 
 	const subpathConditions: {
@@ -257,37 +308,7 @@ export const analyzePackageExports = (
 		}
 	}
 
-	// Filter out blocked exports
-	const unblockedExports: PackageEntryPoints = {};
-	for (const subpath in subpathConditions) {
-		if (!Object.hasOwn(subpathConditions, subpath)) {
-			continue;
-		}
-
-		const conditionsEntries = Object.entries(subpathConditions[subpath])
-			.filter(
-				([conditions]) => !blocks.some(
-					([blockPath, blockCondition]) => (
-						(
-							typeof blockPath === 'string'
-								? blockPath === subpath
-								: pathMatches(blockPath, subpath)
-						)
-						&& conditions === blockCondition
-					),
-				),
-			)
-			.map(
-				([conditions, internalPath]): [string[], string] => [JSON.parse(conditions), internalPath],
-			)
-			.sort(([conditionsA], [conditionsB]) => conditionsA.length - conditionsB.length);
-
-		if (conditionsEntries.length > 0) {
-			unblockedExports[subpath] = conditionsEntries;
-		}
-	}
-
-	return unblockedExports;
+	return filterBlockedExports(subpathConditions, blocks);
 };
 
 /**
@@ -297,24 +318,9 @@ export const analyzePackageExportsAsync = async (
 	exports: PackageJson.Exports | undefined,
 	fs: AsyncFileSystemAccess,
 ): Promise<PackageEntryPoints> => {
-	if (!exports || exports === null) {
+	const exportsObject = normalizeExports(exports);
+	if (!exportsObject) {
 		return {};
-	}
-
-	// Normalize exports to always be an object with subpaths
-	let exportsObject: Record<string, PackageJson.Exports>;
-	if (typeof exports === 'string' || Array.isArray(exports)) {
-		exportsObject = { '.': exports };
-	} else {
-		const keys = Object.keys(exports);
-		if (keys.length === 0) {
-			return {};
-		}
-		if (keys[0][0] === '.') {
-			exportsObject = exports as Record<string, PackageJson.Exports>;
-		} else {
-			exportsObject = { '.': exports };
-		}
 	}
 
 	const subpathConditions: {
@@ -378,35 +384,5 @@ export const analyzePackageExportsAsync = async (
 		}
 	}
 
-	// Filter out blocked exports
-	const unblockedExports: PackageEntryPoints = {};
-	for (const subpath in subpathConditions) {
-		if (!Object.hasOwn(subpathConditions, subpath)) {
-			continue;
-		}
-
-		const conditionsEntries = Object.entries(subpathConditions[subpath])
-			.filter(
-				([conditions]) => !blocks.some(
-					([blockPath, blockCondition]) => (
-						(
-							typeof blockPath === 'string'
-								? blockPath === subpath
-								: pathMatches(blockPath, subpath)
-						)
-						&& conditions === blockCondition
-					),
-				),
-			)
-			.map(
-				([conditions, internalPath]): [string[], string] => [JSON.parse(conditions), internalPath],
-			)
-			.sort(([conditionsA], [conditionsB]) => conditionsA.length - conditionsB.length);
-
-		if (conditionsEntries.length > 0) {
-			unblockedExports[subpath] = conditionsEntries;
-		}
-	}
-
-	return unblockedExports;
+	return filterBlockedExports(subpathConditions, blocks);
 };

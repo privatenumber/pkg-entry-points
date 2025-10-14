@@ -161,24 +161,6 @@ const resolveAttempts = (
 	return conditions;
 };
 
-const getConditionsAsync = async (
-	fs: AsyncFileSystemAccess,
-	exports: PackageJson.Exports,
-	conditionsPath: string[] = [],
-): Promise<ConditionsMap> => {
-	const attempts = collectExportAttempts(exports, conditionsPath);
-	return resolveAttemptsAsync(attempts, fs);
-};
-
-const getConditions = (
-	fs: FileSystemAccess,
-	exports: PackageJson.Exports,
-	conditionsPath: string[] = [],
-): ConditionsMap => {
-	const attempts = collectExportAttempts(exports, conditionsPath);
-	return resolveAttempts(attempts, fs);
-};
-
 /**
  * Analyze exports with filesystem access.
  *
@@ -227,7 +209,8 @@ export const analyzePackageExports = (
 	// Walk each subpath
 	for (const rawSubpath of Object.keys(exportsObject)) {
 		const subpathExports = exportsObject[rawSubpath]!;
-		const conditions = getConditions(fs, subpathExports);
+		const attempts = collectExportAttempts(subpathExports);
+		const conditions = resolveAttempts(attempts, fs);
 
 		const subpathStar = rawSubpath.includes(STAR);
 
@@ -348,7 +331,8 @@ export const analyzePackageExportsAsync = async (
 	// Walk each subpath
 	for (const rawSubpath of Object.keys(exportsObject)) {
 		const subpathExports = exportsObject[rawSubpath]!;
-		const conditions = await getConditionsAsync(fs, subpathExports);
+		const attempts = collectExportAttempts(subpathExports);
+		const conditions = await resolveAttemptsAsync(attempts, fs);
 
 		const subpathStar = rawSubpath.includes(STAR);
 

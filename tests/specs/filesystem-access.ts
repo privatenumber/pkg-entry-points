@@ -1,5 +1,5 @@
 import { testSuite, expect } from 'manten';
-import type { FileSystemAccess } from '../../src/analyze-package-exports.js';
+import type { FileSystemAccess } from '../../src/create-fs-access.js';
 import { analyzePackageExports } from '../../src/index.js';
 
 export default testSuite(({ describe }) => {

@@ -2,16 +2,7 @@ import type { PackageJson } from 'type-fest';
 import type { PackageEntryPoints, ConditionsMap, StarMatch } from './types.js';
 import { createPathMatcher, pathMatches, type PathMatcher } from './utils/path-matcher.js';
 import { STAR } from './utils/constants.js';
-
-export type FileSystemAccess = {
-	fileExists(path: string): boolean;
-	listDirectory(directoryPath: string): string[];
-};
-
-export type AsyncFileSystemAccess = {
-	fileExists(path: string): Promise<boolean>;
-	listDirectory(directoryPath: string): Promise<string[]>;
-};
+import type { AsyncFileSystemAccess, FileSystemAccess } from './create-fs-access.js';
 
 /**
  * Extract directory path from a wildcard pattern

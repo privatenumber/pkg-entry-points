@@ -8,7 +8,7 @@ import { createAsyncFsAccess, createFsAccess } from './create-fs-access.js';
 
 // Export new API
 export { analyzePackageExports };
-export type { FileSystemAccess, AsyncFileSystemAccess } from './analyze-package-exports.js';
+export type { AsyncFileSystemAccess, FileSystemAccess } from './create-fs-access.js';
 
 export const getPackageEntryPoints = async (
 	packagePath: string,

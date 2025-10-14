@@ -1,6 +1,6 @@
 import type { PackageJson } from 'type-fest';
 import type { ConditionToPath, PackageEntryPoints } from './types.js';
-import type { AsyncFileSystemAccess, FileSystemAccess } from './analyze-package-exports.js';
+import type { AsyncFileSystemAccess, FileSystemAccess } from './create-fs-access.js';
 
 const legacyCondition = (
 	filePath: string,

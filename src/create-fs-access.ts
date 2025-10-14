@@ -1,6 +1,15 @@
 import type _fs from 'fs';
 import path from 'path';
-import type { AsyncFileSystemAccess, FileSystemAccess } from './analyze-package-exports.js';
+
+export type FileSystemAccess = {
+	fileExists(path: string): boolean;
+	listDirectory(directoryPath: string): string[];
+};
+
+export type AsyncFileSystemAccess = {
+	fileExists(path: string): Promise<boolean>;
+	listDirectory(directoryPath: string): Promise<string[]>;
+};
 
 /**
  * Create async filesystem access adapter for a package directory

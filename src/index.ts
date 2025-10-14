@@ -221,3 +221,6 @@ export const getPackageEntryPointsSync = (
 
 	return resolveLegacyEntries(packageJson, packageFiles);
 };
+
+export { parsePackageExports } from './parse-package-exports.js';
+export type { ParsedExport } from './types.js';

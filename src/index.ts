@@ -1,8 +1,7 @@
 import _fs from 'fs';
 import path from 'path';
 import type { PackageJson } from 'type-fest';
-import { getAllFiles, getAllFilesSync } from './utils/get-all-files.js';
-import { analyzeLegacyExports } from './legacy-resolver.js';
+import { resolveLegacyMain, resolveLegacyMainAsync } from './resolve-legacy-main.js';
 import type { PackageEntryPoints } from './types.js';
 import {
 	analyzePackageExports,
@@ -122,14 +121,14 @@ export const getPackageEntryPoints = async (
 	const packageJsonString = await fs.readFile(path.join(packagePath, 'package.json'), 'utf8');
 	const packageJson = JSON.parse(packageJsonString) as PackageJson;
 
+	const fsAccess = createAsyncFsAccess(packagePath, fs);
+
 	if (packageJson.exports !== undefined) {
-		const fsAccess = createAsyncFsAccess(packagePath, fs);
 		return analyzePackageExportsAsync(packageJson.exports, fsAccess);
 	}
 
 	// Fallback to legacy for packages without exports
-	const packageFiles = await getAllFiles(fs, packagePath);
-	return analyzeLegacyExports(packageJson, packageFiles);
+	return resolveLegacyMainAsync(packageJson, fsAccess);
 };
 
 export const getPackageEntryPointsSync = (
@@ -139,12 +138,12 @@ export const getPackageEntryPointsSync = (
 	const packageJsonString = fs.readFileSync(path.join(packagePath, 'package.json'), 'utf8');
 	const packageJson = JSON.parse(packageJsonString) as PackageJson;
 
+	const fsAccess = createFsAccess(packagePath, fs);
+
 	if (packageJson.exports !== undefined) {
-		const fsAccess = createFsAccess(packagePath, fs);
 		return analyzePackageExports(packageJson.exports, fsAccess);
 	}
 
 	// Fallback to legacy for packages without exports
-	const packageFiles = getAllFilesSync(fs, packagePath);
-	return analyzeLegacyExports(packageJson, packageFiles);
+	return resolveLegacyMain(packageJson, fsAccess);
 };

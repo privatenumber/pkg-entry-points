@@ -148,7 +148,9 @@ function getConditionsLazy(
 		if (value === null) {
 			// Blocking export
 			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
-			conditions[key] = null;
+			if (!Object.hasOwn(conditions, key)) {
+				conditions[key] = null;
+			}
 		} else if (typeof value === 'string') {
 			// Leaf node - actual file path
 			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
@@ -353,7 +355,9 @@ async function getConditionsLazyAsync(
 	): Promise<void> {
 		if (value === null) {
 			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
-			conditions[key] = null;
+			if (!Object.hasOwn(conditions, key)) {
+				conditions[key] = null;
+			}
 		} else if (typeof value === 'string') {
 			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
 

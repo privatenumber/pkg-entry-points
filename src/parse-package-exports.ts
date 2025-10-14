@@ -20,6 +20,14 @@ const traverseExports = (
 		const subpathHasStar = context.subpath.includes(STAR);
 		const targetHasStar = exports.includes(STAR);
 
+		// Validate subpath wildcard count
+		if (subpathHasStar) {
+			const subpathParts = context.subpath.split(STAR);
+			if (subpathParts.length > 2) {
+				throw new Error(`Subpath pattern can contain at most one wildcard: ${context.subpath}`);
+			}
+		}
+
 		results.push({
 			subpath: subpathHasStar ? context.subpath.split(STAR) : context.subpath,
 			target: targetHasStar ? exports.split(STAR) : exports,

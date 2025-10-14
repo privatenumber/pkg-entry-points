@@ -128,5 +128,13 @@ export default testSuite(({ describe }) => {
 				},
 			]);
 		});
+
+		test('throws on multiple wildcards in subpath', () => {
+			expect(() => {
+				parsePackageExports({
+					'./*/*': './dist/index.js',
+				});
+			}).toThrow('Subpath pattern can contain at most one wildcard: ./*/*');
+		});
 	});
 });

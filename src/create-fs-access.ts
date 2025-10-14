@@ -25,29 +25,29 @@ export const createAsyncFsAccess = (
 	async readdirAll(directoryPath: string): Promise<string[]> {
 		const fullPath = path.join(packagePath, directoryPath);
 
-		let entries: string[];
+		let entries: _fs.Dirent[];
 		try {
-			entries = await fs.readdir(fullPath);
+			entries = await fs.readdir(fullPath, { withFileTypes: true });
 		} catch {
 			// Directory doesn't exist or no permission
 			return [];
 		}
 
-		const results = await Promise.all(entries.filter(entry => entry !== 'node_modules').map(async (entry) => {
-			let entryPath = path.join(directoryPath, entry);
+		const results = await Promise.all(entries.filter(entry => entry.name !== 'node_modules').map(async (entry) => {
+			let entryPath = path.join(directoryPath, entry.name);
 			if (!entryPath.startsWith('./')) {
 				entryPath = `./${entryPath}`;
 			}
 
-			const fullEntryPath = path.join(packagePath, entryPath);
-			const stat = await fs.stat(fullEntryPath);
-			if (stat.isDirectory()) {
+			if (entry.isDirectory()) {
 				return await this.readdirAll(entryPath);
 			}
 
-			if (stat.isFile()) {
+			if (entry.isFile()) {
 				return [entryPath];
 			}
+
+			return [];
 		}));
 
 		return results.flat().filter((p): p is string => p !== null);
@@ -68,29 +68,29 @@ export const createFsAccess = (
 	readdirAll(directoryPath: string): string[] {
 		const fullPath = path.join(packagePath, directoryPath);
 
-		let entries: string[];
+		let entries: _fs.Dirent[];
 		try {
-			entries = fs.readdirSync(fullPath);
+			entries = fs.readdirSync(fullPath, { withFileTypes: true });
 		} catch {
 			// Directory doesn't exist or no permission
 			return [];
 		}
 
-		return entries.filter(entry => entry !== 'node_modules').flatMap((entry) => {
-			let entryPath = path.join(directoryPath, entry);
+		return entries.filter(entry => entry.name !== 'node_modules').flatMap((entry) => {
+			let entryPath = path.join(directoryPath, entry.name);
 			if (!entryPath.startsWith('./')) {
 				entryPath = `./${entryPath}`;
 			}
 
-			const fullEntryPath = path.join(packagePath, entryPath);
-			const stat = fs.statSync(fullEntryPath);
-			if (stat.isDirectory()) {
+			if (entry.isDirectory()) {
 				return this.readdirAll(entryPath);
 			}
 
-			if (stat.isFile()) {
+			if (entry.isFile()) {
 				return [entryPath];
 			}
+
+			return [];
 		}).filter((p): p is string => p !== null);
 	},
 });

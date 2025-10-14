@@ -155,5 +155,22 @@ export default testSuite(({ describe }) => {
 				},
 			]);
 		});
+
+		test('null in conditions object (filtered out)', () => {
+			const result = parsePackageExports({
+				'.': {
+					import: './index.mjs',
+					require: null,
+				},
+			});
+
+			expect(result).toStrictEqual([
+				{
+					subpath: '.',
+					target: './index.mjs',
+					conditions: ['import'],
+				},
+			]);
+		});
 	});
 });

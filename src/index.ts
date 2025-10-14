@@ -25,8 +25,8 @@ const createAsyncFsAccess = (
 	async fileExists(filePath: string): Promise<boolean> {
 		try {
 			const fullPath = path.join(packagePath, filePath);
-			const stat = await fs.stat(fullPath);
-			return stat.isFile();
+			await fs.access(fullPath);
+			return true;
 		} catch {
 			return false;
 		}
@@ -76,7 +76,8 @@ const createFsAccess = (
 	fileExists(filePath: string): boolean {
 		try {
 			const fullPath = path.join(packagePath, filePath);
-			return fs.statSync(fullPath).isFile();
+			fs.accessSync(fullPath);
+			return true;
 		} catch {
 			return false;
 		}

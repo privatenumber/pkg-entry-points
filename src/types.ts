@@ -12,6 +12,6 @@ export type ConditionsMap = {
 
 export type ParsedExport = {
 	subpath: string | string[];
-	target: string | string[];
+	target: string | string[] | null;
 	conditions: string[];
 };

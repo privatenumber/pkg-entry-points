@@ -15,10 +15,16 @@ export default testSuite(({ describe }) => {
 			]);
 		});
 
-		test('null export (should filter out)', () => {
+		test('null export (creates block entry)', () => {
 			const result = parsePackageExports(null);
 
-			expect(result).toStrictEqual([]);
+			expect(result).toStrictEqual([
+				{
+					subpath: '.',
+					target: null,
+					conditions: ['default'],
+				},
+			]);
 		});
 
 		test('empty object', () => {
@@ -156,7 +162,7 @@ export default testSuite(({ describe }) => {
 			]);
 		});
 
-		test('null in conditions object (filtered out)', () => {
+		test('null in conditions object (creates block entry)', () => {
 			const result = parsePackageExports({
 				'.': {
 					import: './index.mjs',
@@ -169,6 +175,11 @@ export default testSuite(({ describe }) => {
 					subpath: '.',
 					target: './index.mjs',
 					conditions: ['import'],
+				},
+				{
+					subpath: '.',
+					target: null,
+					conditions: ['require'],
 				},
 			]);
 		});
@@ -211,6 +222,31 @@ export default testSuite(({ describe }) => {
 				{
 					subpath: ['./features/', ''],
 					target: ['./dist/browser/', '/index.js'],
+					conditions: ['default'],
+				},
+				{
+					subpath: './private',
+					target: null,
+					conditions: ['default'],
+				},
+			]);
+		});
+
+		test('null blocks wildcard patterns', () => {
+			const result = parsePackageExports({
+				'./dist/*': './dist/*',
+				'./dist/internal/*': null,
+			});
+
+			expect(result).toStrictEqual([
+				{
+					subpath: ['./dist/', ''],
+					target: ['./dist/', ''],
+					conditions: ['default'],
+				},
+				{
+					subpath: ['./dist/internal/', ''],
+					target: null,
 					conditions: ['default'],
 				},
 			]);

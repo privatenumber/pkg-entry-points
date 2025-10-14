@@ -13,6 +13,23 @@ const traverseExports = (
 	results: ParsedExport[],
 ): void => {
 	if (exports === null) {
+		const subpathHasStar = context.subpath.includes(STAR);
+
+		// Validate subpath wildcard count
+		if (subpathHasStar) {
+			const subpathParts = context.subpath.split(STAR);
+			if (subpathParts.length > 2) {
+				throw new Error(`Subpath pattern can contain at most one wildcard: ${context.subpath}`);
+			}
+		}
+
+		results.push({
+			subpath: subpathHasStar ? context.subpath.split(STAR) : context.subpath,
+			target: null,
+			conditions: context.conditionsPath.length > 0
+				? context.conditionsPath
+				: ['default'],
+		});
 		return;
 	}
 

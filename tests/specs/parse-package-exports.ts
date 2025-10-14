@@ -100,5 +100,19 @@ export default testSuite(({ describe }) => {
 				},
 			]);
 		});
+
+		test('wildcard subpath', () => {
+			const result = parsePackageExports({
+				'./components/*': './dist/components/*.js',
+			});
+
+			expect(result).toStrictEqual([
+				{
+					subpath: ['./components/', ''],
+					target: ['./dist/components/', '.js'],
+					conditions: ['default'],
+				},
+			]);
+		});
 	});
 });

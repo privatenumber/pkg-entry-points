@@ -1,5 +1,6 @@
 import type { PackageJson } from 'type-fest';
 import type { ParsedExport } from './types.js';
+import { STAR } from './utils/constants.js';
 
 type ParseContext = {
 	subpath: string;
@@ -16,9 +17,12 @@ const traverseExports = (
 	}
 
 	if (typeof exports === 'string') {
+		const subpathHasStar = context.subpath.includes(STAR);
+		const targetHasStar = exports.includes(STAR);
+
 		results.push({
-			subpath: context.subpath,
-			target: exports,
+			subpath: subpathHasStar ? context.subpath.split(STAR) : context.subpath,
+			target: targetHasStar ? exports.split(STAR) : exports,
 			conditions: context.conditionsPath.length > 0
 				? context.conditionsPath
 				: ['default'],

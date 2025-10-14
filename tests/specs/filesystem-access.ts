@@ -1,9 +1,9 @@
 import { testSuite, expect } from 'manten';
 import type { FileSystemAccess } from '../../src/lazy-analyzer.js';
-import { analyzePackageExportsLazy } from '../../src/index.js';
+import { analyzePackageExports } from '../../src/index.js';
 
 export default testSuite(({ describe }) => {
-	describe('lazy filesystem access', ({ test }) => {
+	describe('filesystem access', ({ test }) => {
 		test('only checks files referenced in exports', () => {
 			const checkedPaths: string[] = [];
 			const listedDirectories: string[] = [];
@@ -19,7 +19,7 @@ export default testSuite(({ describe }) => {
 				},
 			};
 
-			const result = analyzePackageExportsLazy(
+			const result = analyzePackageExports(
 				{
 					'.': './index.js',
 					'./utils': './utils.js',
@@ -62,7 +62,7 @@ export default testSuite(({ describe }) => {
 				},
 			};
 
-			const result = analyzePackageExportsLazy(
+			const result = analyzePackageExports(
 				{
 					'./*': './src/*.js',
 				},
@@ -91,7 +91,7 @@ export default testSuite(({ describe }) => {
 				listDirectory: () => [],
 			};
 
-			const result = analyzePackageExportsLazy(
+			const result = analyzePackageExports(
 				{
 					'.': './index.js',
 					'./missing': './missing.js',

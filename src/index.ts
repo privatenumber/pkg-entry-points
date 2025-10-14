@@ -4,10 +4,10 @@ import type { PackageJson } from 'type-fest';
 import { getAllFiles, getAllFilesSync } from './utils/get-all-files.js';
 import { analyzeLegacyExports } from './legacy-resolver.js';
 import type { PackageEntryPoints } from './types.js';
-import { analyzePackageExportsLazy, analyzePackageExportsLazyAsync } from './lazy-analyzer.js';
+import { analyzePackageExports, analyzePackageExportsAsync } from './lazy-analyzer.js';
 
-// Export new lazy API
-export { analyzePackageExportsLazy };
+// Export new API
+export { analyzePackageExports };
 export type { FileSystemAccess, AsyncFileSystemAccess } from './lazy-analyzer.js';
 
 export const getPackageEntryPoints = async (
@@ -63,7 +63,7 @@ export const getPackageEntryPoints = async (
 			},
 		};
 
-		return analyzePackageExportsLazyAsync(packageJson.exports, fsAccess);
+		return analyzePackageExportsAsync(packageJson.exports, fsAccess);
 	}
 
 	// Fallback to legacy for packages without exports
@@ -121,7 +121,7 @@ export const getPackageEntryPointsSync = (
 			},
 		};
 
-		return analyzePackageExportsLazy(packageJson.exports, fsAccess);
+		return analyzePackageExports(packageJson.exports, fsAccess);
 	}
 
 	// Fallback to legacy for packages without exports

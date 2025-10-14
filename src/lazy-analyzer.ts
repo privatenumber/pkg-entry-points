@@ -14,14 +14,14 @@ export type AsyncFileSystemAccess = {
 };
 
 /**
- * Analyze exports with lazy filesystem access.
+ * Analyze exports with filesystem access.
  *
  * Instead of scanning all files upfront, this function:
  * 1. Walks the exports tree to find file references
  * 2. Checks only those specific files
  * 3. For wildcards, lists only the relevant directories
  */
-export const analyzePackageExportsLazy = (
+export const analyzePackageExports = (
 	exports: PackageJson.Exports | undefined,
 	fs: FileSystemAccess,
 ): PackageEntryPoints => {
@@ -61,7 +61,7 @@ export const analyzePackageExportsLazy = (
 	// Walk each subpath
 	for (const rawSubpath of Object.keys(exportsObject)) {
 		const subpathExports = exportsObject[rawSubpath]!;
-		const conditions = getConditionsLazy(fs, subpathExports, rawSubpath);
+		const conditions = getConditions(fs, subpathExports, rawSubpath);
 
 		const subpathStar = rawSubpath.includes(STAR);
 
@@ -142,9 +142,9 @@ export const analyzePackageExportsLazy = (
 };
 
 /**
- * Recursively walk exports tree, checking files lazily
+ * Recursively walk exports tree, checking files on-demand
  */
-function getConditionsLazy(
+function getConditions(
 	fs: FileSystemAccess,
 	exports: PackageJson.Exports,
 	subpathPattern?: string,
@@ -233,9 +233,9 @@ function extractDirectoryFromPattern(pattern: string): string {
 }
 
 /**
- * Async version of analyzePackageExportsLazy
+ * Async version of analyzePackageExports
  */
-export const analyzePackageExportsLazyAsync = async (
+export const analyzePackageExportsAsync = async (
 	exports: PackageJson.Exports | undefined,
 	fs: AsyncFileSystemAccess,
 ): Promise<PackageEntryPoints> => {
@@ -273,7 +273,7 @@ export const analyzePackageExportsLazyAsync = async (
 	// Walk each subpath
 	for (const rawSubpath of Object.keys(exportsObject)) {
 		const subpathExports = exportsObject[rawSubpath]!;
-		const conditions = await getConditionsLazyAsync(fs, subpathExports, rawSubpath);
+		const conditions = await getConditionsAsync(fs, subpathExports, rawSubpath);
 
 		const subpathStar = rawSubpath.includes(STAR);
 
@@ -352,7 +352,7 @@ export const analyzePackageExportsLazyAsync = async (
 	return unblockedExports;
 };
 
-async function getConditionsLazyAsync(
+async function getConditionsAsync(
 	fs: AsyncFileSystemAccess,
 	exports: PackageJson.Exports,
 	subpathPattern?: string,

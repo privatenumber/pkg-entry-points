@@ -4,6 +4,10 @@ import type { ParsedExport } from './types.js';
 export const parsePackageExports = (
 	exports: PackageJson.Exports,
 ): ParsedExport[] => {
+	if (exports === null) {
+		return [];
+	}
+
 	if (typeof exports === 'string') {
 		return [
 			{

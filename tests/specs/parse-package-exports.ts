@@ -14,5 +14,11 @@ export default testSuite(({ describe }) => {
 				},
 			]);
 		});
+
+		test('null export (should filter out)', () => {
+			const result = parsePackageExports(null);
+
+			expect(result).toStrictEqual([]);
+		});
 	});
 });

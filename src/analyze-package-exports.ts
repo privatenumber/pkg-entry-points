@@ -14,6 +14,161 @@ export type AsyncFileSystemAccess = {
 };
 
 /**
+ * Extract directory path from a wildcard pattern
+ * Example: "./src/*.js" → "./src"
+ */
+const extractDirectoryFromPattern = (pattern: string): string => {
+	const starIndex = pattern.indexOf(STAR);
+	if (starIndex === -1) {
+		return '.';
+	}
+
+	// Find the last slash before the star
+	const beforeStar = pattern.slice(0, starIndex);
+	const lastSlash = beforeStar.lastIndexOf('/');
+
+	return lastSlash === -1 ? '.' : beforeStar.slice(0, lastSlash);
+};
+
+const getConditionsAsync = async (
+	fs: AsyncFileSystemAccess,
+	exports: PackageJson.Exports,
+	subpathPattern?: string,
+	conditionsPath: string[] = [],
+): Promise<ConditionsMap> => {
+	const conditions: ConditionsMap = {};
+
+	const recurse = async (
+		value: PackageJson.Exports,
+		currentConditions: string[],
+	): Promise<void> => {
+		if (value === null) {
+			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
+			if (!Object.hasOwn(conditions, key)) {
+				conditions[key] = null;
+			}
+		} else if (typeof value === 'string') {
+			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
+
+			if (!Object.hasOwn(conditions, key)) {
+				if (value.includes(STAR)) {
+					const pathMatcher = createPathMatcher(value);
+					const directoryPath = extractDirectoryFromPattern(value);
+					const files = await fs.listDirectory(directoryPath);
+
+					const matches: StarMatch[] = files
+						.map((filePath) => {
+							const starValue = pathMatches(pathMatcher, filePath);
+							return starValue === undefined ? null : [filePath, starValue] as StarMatch;
+						})
+						.filter((match): match is StarMatch => match !== null);
+
+					if (matches.length > 0) {
+						conditions[key] = matches;
+					}
+				} else if (await fs.fileExists(value)) {
+					conditions[key] = [value];
+				}
+			}
+		} else if (Array.isArray(value)) {
+			for (const item of value) {
+				await recurse(item, currentConditions);
+			}
+		} else if (value && typeof value === 'object') {
+			for (const condition in value) {
+				if (!Object.hasOwn(value, condition)) {
+					continue;
+				}
+
+				const newConditions = currentConditions.slice();
+				if (!newConditions.includes(condition)) {
+					newConditions.push(condition);
+				}
+
+				await recurse(value[condition]!, newConditions.sort());
+			}
+		}
+	};
+
+	await recurse(exports, conditionsPath);
+	return conditions;
+};
+
+/**
+ * Recursively walk exports tree, checking files on-demand
+ */
+const getConditions = (
+	fs: FileSystemAccess,
+	exports: PackageJson.Exports,
+	subpathPattern?: string,
+	conditionsPath: string[] = [],
+): ConditionsMap => {
+	const conditions: ConditionsMap = {};
+
+	const recurse = (
+		value: PackageJson.Exports,
+		currentConditions: string[],
+	): void => {
+		if (value === null) {
+			// Blocking export
+			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
+			if (!Object.hasOwn(conditions, key)) {
+				conditions[key] = null;
+			}
+		} else if (typeof value === 'string') {
+			// Leaf node - actual file path
+			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
+
+			if (!Object.hasOwn(conditions, key)) {
+				// Check if file exists (lazy)
+				if (value.includes(STAR)) {
+					// Wildcard - need to list directory
+					const pathMatcher = createPathMatcher(value);
+					const directoryPath = extractDirectoryFromPattern(value);
+					const files = fs.listDirectory(directoryPath);
+
+					const matches: StarMatch[] = files
+						.map((filePath) => {
+							const starValue = pathMatches(pathMatcher, filePath);
+							return starValue === undefined ? null : [filePath, starValue] as StarMatch;
+						})
+						.filter((match): match is StarMatch => match !== null);
+
+					if (matches.length > 0) {
+						conditions[key] = matches;
+					}
+				} else if (fs.fileExists(value)) {
+					// Direct file check
+					conditions[key] = [value];
+				}
+			}
+		} else if (Array.isArray(value)) {
+			// Fallback array
+			for (const item of value) {
+				recurse(item, currentConditions);
+			}
+		} else if (value && typeof value === 'object') {
+			// Conditions object
+			for (const condition in value) {
+				if (!Object.hasOwn(value, condition)) {
+					continue;
+				}
+
+				const newConditions = currentConditions.slice();
+				if (!newConditions.includes(condition)) {
+					newConditions.push(condition);
+				}
+
+				recurse(value[condition]!, newConditions.sort());
+			}
+		}
+	};
+
+	recurse(exports, conditionsPath);
+	return conditions;
+};
+
+/**
  * Analyze exports with filesystem access.
  *
  * Instead of scanning all files upfront, this function:
@@ -142,97 +297,6 @@ export const analyzePackageExports = (
 };
 
 /**
- * Recursively walk exports tree, checking files on-demand
- */
-function getConditions(
-	fs: FileSystemAccess,
-	exports: PackageJson.Exports,
-	subpathPattern?: string,
-	conditionsPath: string[] = [],
-): ConditionsMap {
-	const conditions: ConditionsMap = {};
-
-	const recurse = (
-		value: PackageJson.Exports,
-		currentConditions: string[],
-	): void => {
-		if (value === null) {
-			// Blocking export
-			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
-			if (!Object.hasOwn(conditions, key)) {
-				conditions[key] = null;
-			}
-		} else if (typeof value === 'string') {
-			// Leaf node - actual file path
-			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
-
-			if (!Object.hasOwn(conditions, key)) {
-				// Check if file exists (lazy)
-				if (value.includes(STAR)) {
-					// Wildcard - need to list directory
-					const pathMatcher = createPathMatcher(value);
-					const directoryPath = extractDirectoryFromPattern(value);
-					const files = fs.listDirectory(directoryPath);
-
-					const matches: StarMatch[] = files
-						.map((filePath) => {
-							const starValue = pathMatches(pathMatcher, filePath);
-							return starValue === undefined ? null : [filePath, starValue] as StarMatch;
-						})
-						.filter((match): match is StarMatch => match !== null);
-
-					if (matches.length > 0) {
-						conditions[key] = matches;
-					}
-				} else if (fs.fileExists(value)) {
-					// Direct file check
-					conditions[key] = [value];
-				}
-			}
-		} else if (Array.isArray(value)) {
-			// Fallback array
-			for (const item of value) {
-				recurse(item, currentConditions);
-			}
-		} else if (value && typeof value === 'object') {
-			// Conditions object
-			for (const condition in value) {
-				if (!Object.hasOwn(value, condition)) {
-					continue;
-				}
-
-				const newConditions = currentConditions.slice();
-				if (!newConditions.includes(condition)) {
-					newConditions.push(condition);
-				}
-
-				recurse(value[condition]!, newConditions.sort());
-			}
-		}
-	};
-
-	recurse(exports, conditionsPath);
-	return conditions;
-}
-
-/**
- * Extract directory path from a wildcard pattern
- * Example: "./src/*.js" → "./src"
- */
-function extractDirectoryFromPattern(pattern: string): string {
-	const starIndex = pattern.indexOf(STAR);
-	if (starIndex === -1) {
-		return '.';
-	}
-
-	// Find the last slash before the star
-	const beforeStar = pattern.slice(0, starIndex);
-	const lastSlash = beforeStar.lastIndexOf('/');
-
-	return lastSlash === -1 ? '.' : beforeStar.slice(0, lastSlash);
-}
-
-/**
  * Async version of analyzePackageExports
  */
 export const analyzePackageExportsAsync = async (
@@ -351,67 +415,3 @@ export const analyzePackageExportsAsync = async (
 
 	return unblockedExports;
 };
-
-async function getConditionsAsync(
-	fs: AsyncFileSystemAccess,
-	exports: PackageJson.Exports,
-	subpathPattern?: string,
-	conditionsPath: string[] = [],
-): Promise<ConditionsMap> {
-	const conditions: ConditionsMap = {};
-
-	const recurse = async (
-		value: PackageJson.Exports,
-		currentConditions: string[],
-	): Promise<void> => {
-		if (value === null) {
-			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
-			if (!Object.hasOwn(conditions, key)) {
-				conditions[key] = null;
-			}
-		} else if (typeof value === 'string') {
-			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
-
-			if (!Object.hasOwn(conditions, key)) {
-				if (value.includes(STAR)) {
-					const pathMatcher = createPathMatcher(value);
-					const directoryPath = extractDirectoryFromPattern(value);
-					const files = await fs.listDirectory(directoryPath);
-
-					const matches: StarMatch[] = files
-						.map((filePath) => {
-							const starValue = pathMatches(pathMatcher, filePath);
-							return starValue === undefined ? null : [filePath, starValue] as StarMatch;
-						})
-						.filter((match): match is StarMatch => match !== null);
-
-					if (matches.length > 0) {
-						conditions[key] = matches;
-					}
-				} else if (await fs.fileExists(value)) {
-					conditions[key] = [value];
-				}
-			}
-		} else if (Array.isArray(value)) {
-			for (const item of value) {
-				await recurse(item, currentConditions);
-			}
-		} else if (value && typeof value === 'object') {
-			for (const condition in value) {
-				if (!Object.hasOwn(value, condition)) {
-					continue;
-				}
-
-				const newConditions = currentConditions.slice();
-				if (!newConditions.includes(condition)) {
-					newConditions.push(condition);
-				}
-
-				await recurse(value[condition]!, newConditions.sort());
-			}
-		}
-	};
-
-	await recurse(exports, conditionsPath);
-	return conditions;
-}

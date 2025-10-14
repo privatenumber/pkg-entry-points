@@ -4,11 +4,11 @@ import type { PackageJson } from 'type-fest';
 import { getAllFiles, getAllFilesSync } from './utils/get-all-files.js';
 import { analyzeLegacyExports } from './legacy-resolver.js';
 import type { PackageEntryPoints } from './types.js';
-import { analyzePackageExports, analyzePackageExportsAsync } from './lazy-analyzer.js';
+import { analyzePackageExports, analyzePackageExportsAsync } from './analyze-package-exports.js';
 
 // Export new API
 export { analyzePackageExports };
-export type { FileSystemAccess, AsyncFileSystemAccess } from './lazy-analyzer.js';
+export type { FileSystemAccess, AsyncFileSystemAccess } from './analyze-package-exports.js';
 
 export const getPackageEntryPoints = async (
 	packagePath: string,

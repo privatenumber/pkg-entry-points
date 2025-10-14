@@ -1,5 +1,5 @@
 import { testSuite, expect } from 'manten';
-import type { FileSystemAccess } from '../../src/lazy-analyzer.js';
+import type { FileSystemAccess } from '../../src/analyze-package-exports.js';
 import { analyzePackageExports } from '../../src/index.js';
 
 export default testSuite(({ describe }) => {

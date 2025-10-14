@@ -4,17 +4,10 @@ import type { PackageJson } from 'type-fest';
 import { getAllFiles, getAllFilesSync } from './utils/get-all-files.js';
 import { createPathMatcher, pathMatches, type PathMatcher } from './utils/path-matcher.js';
 import { STAR } from './utils/constants.js';
-
-type ConditionToPath = [conditions: string[], internalPath: string];
-export type PackageEntryPoints = {
-	[subpath: string]: ConditionToPath[];
-};
-
-type StarMatch = [filePath: string, starMatch: string];
-
-type ConditionsMap = {
-	[conditions: string]: (string | StarMatch)[] | null;
-};
+import { analyzeLegacyExports } from './legacy-resolver.js';
+import type {
+	ConditionsMap, PackageEntryPoints, StarMatch, ConditionToPath,
+} from './types.js';
 
 type GetConditions = {
 	(
@@ -197,41 +190,6 @@ const analyzeExportsWithFiles = (
 	}
 
 	return unblockedExports;
-};
-
-const legacyCondition = (
-	filePath: string,
-) => [[['default'], filePath] as ConditionToPath];
-
-const analyzeLegacyExports = (
-	packageJson: PackageJson,
-	packageFiles: string[],
-): PackageEntryPoints => {
-	const jsExtension = /\.(?:json|[cm]?js|d\.ts)$/;
-	const legacyExports = Object.fromEntries(
-		packageFiles
-			.filter(filePath => jsExtension.test(filePath))
-			.map(filePath => [
-				filePath,
-				legacyCondition(filePath),
-			]),
-	);
-
-	let packageMain = packageJson.main ?? './index.js';
-	if (packageMain[0] !== '.') {
-		packageMain = `./${packageMain}`;
-	}
-
-	for (const extension of ['', '.js', '.json']) {
-		const target = packageMain + extension;
-		if (packageFiles.includes(target)) {
-			legacyExports['.'] = legacyCondition(target);
-			legacyExports[target] = legacyCondition(target);
-			break;
-		}
-	}
-
-	return legacyExports;
 };
 
 export const getPackageEntryPoints = async (

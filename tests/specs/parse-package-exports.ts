@@ -114,5 +114,19 @@ export default testSuite(({ describe }) => {
 				},
 			]);
 		});
+
+		test('multiple wildcards in target', () => {
+			const result = parsePackageExports({
+				'./features/*': './dist/*/*/index.js',
+			});
+
+			expect(result).toStrictEqual([
+				{
+					subpath: ['./features/', ''],
+					target: ['./dist/', '/', '/index.js'],
+					conditions: ['default'],
+				},
+			]);
+		});
 	});
 });

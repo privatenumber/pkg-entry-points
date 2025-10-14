@@ -20,5 +20,11 @@ export default testSuite(({ describe }) => {
 
 			expect(result).toStrictEqual([]);
 		});
+
+		test('empty object', () => {
+			const result = parsePackageExports({});
+
+			expect(result).toStrictEqual([]);
+		});
 	});
 });

@@ -285,7 +285,7 @@ export const getPackageEntryPointsSync = (
 					const entries = fs.readdirSync(fullPath);
 
 					return entries
-						.map((entry) => {
+						.flatMap((entry) => {
 							let entryPath = path.join(directoryPath, entry);
 							// Ensure path starts with ./ for consistency with getAllFilesSync
 							if (!entryPath.startsWith('./')) {
@@ -303,7 +303,6 @@ export const getPackageEntryPointsSync = (
 								return [];
 							}
 						})
-						.flat()
 						.filter((entry): entry is string => entry !== null);
 				} catch {
 					return [];

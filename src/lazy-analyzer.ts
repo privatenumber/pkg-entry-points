@@ -12,10 +12,10 @@ import { STAR } from './utils/constants.js';
  * 2. Checks only those specific files
  * 3. For wildcards, lists only the relevant directories
  */
-export function analyzePackageExportsLazy(
+export const analyzePackageExportsLazy = (
 	exports: PackageJson.Exports | undefined,
 	fs: FileSystemAccess,
-): PackageEntryPoints {
+): PackageEntryPoints => {
 	if (!exports || exports === null) {
 		return {};
 	}
@@ -128,7 +128,7 @@ export function analyzePackageExportsLazy(
 	}
 
 	return unblockedExports;
-}
+};
 
 /**
  * Recursively walk exports tree, checking files lazily
@@ -141,10 +141,10 @@ function getConditionsLazy(
 ): ConditionsMap {
 	const conditions: ConditionsMap = {};
 
-	function recurse(
+	const recurse = (
 		value: PackageJson.Exports,
 		currentConditions: string[],
-	): void {
+	): void => {
 		if (value === null) {
 			// Blocking export
 			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
@@ -166,7 +166,7 @@ function getConditionsLazy(
 					const matches: StarMatch[] = files
 						.map((filePath) => {
 							const starValue = pathMatches(pathMatcher, filePath);
-							return starValue !== undefined ? [filePath, starValue] as StarMatch : null;
+							return starValue === undefined ? null : [filePath, starValue] as StarMatch;
 						})
 						.filter((match): match is StarMatch => match !== null);
 
@@ -200,7 +200,7 @@ function getConditionsLazy(
 				recurse(value[condition]!, newConditions.sort());
 			}
 		}
-	}
+	};
 
 	recurse(exports, conditionsPath);
 	return conditions;
@@ -226,10 +226,10 @@ function extractDirectoryFromPattern(pattern: string): string {
 /**
  * Async version of analyzePackageExportsLazy
  */
-export async function analyzePackageExportsLazyAsync(
+export const analyzePackageExportsLazyAsync = async (
 	exports: PackageJson.Exports | undefined,
 	fs: AsyncFileSystemAccess,
-): Promise<PackageEntryPoints> {
+): Promise<PackageEntryPoints> => {
 	if (!exports || exports === null) {
 		return {};
 	}
@@ -339,7 +339,7 @@ export async function analyzePackageExportsLazyAsync(
 	}
 
 	return unblockedExports;
-}
+};
 
 async function getConditionsLazyAsync(
 	fs: AsyncFileSystemAccess,
@@ -349,10 +349,10 @@ async function getConditionsLazyAsync(
 ): Promise<ConditionsMap> {
 	const conditions: ConditionsMap = {};
 
-	async function recurse(
+	const recurse = async (
 		value: PackageJson.Exports,
 		currentConditions: string[],
-	): Promise<void> {
+	): Promise<void> => {
 		if (value === null) {
 			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
 			if (!Object.hasOwn(conditions, key)) {
@@ -370,17 +370,15 @@ async function getConditionsLazyAsync(
 					const matches: StarMatch[] = files
 						.map((filePath) => {
 							const starValue = pathMatches(pathMatcher, filePath);
-							return starValue !== undefined ? [filePath, starValue] as StarMatch : null;
+							return starValue === undefined ? null : [filePath, starValue] as StarMatch;
 						})
 						.filter((match): match is StarMatch => match !== null);
 
 					if (matches.length > 0) {
 						conditions[key] = matches;
 					}
-				} else {
-					if (await fs.fileExists(value)) {
-						conditions[key] = [value];
-					}
+				} else if (await fs.fileExists(value)) {
+					conditions[key] = [value];
 				}
 			}
 		} else if (Array.isArray(value)) {
@@ -401,7 +399,7 @@ async function getConditionsLazyAsync(
 				await recurse(value[condition]!, newConditions.sort());
 			}
 		}
-	}
+	};
 
 	await recurse(exports, conditionsPath);
 	return conditions;

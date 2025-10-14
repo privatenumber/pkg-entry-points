@@ -88,9 +88,7 @@ export default testSuite(({ describe }) => {
 					// Only ./index.js exists
 					return path === './index.js';
 				},
-				listDirectory() {
-					return [];
-				},
+				listDirectory: () => [],
 			};
 
 			const result = analyzePackageExportsLazy(

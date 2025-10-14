@@ -1,6 +1,12 @@
 import type _fs from 'fs';
 import path from 'path';
 
+/**
+ * Recursively list all files in a directory.
+ *
+ * Required for legacy packages (without exports field) where every JS file
+ * is a potential entry point. Cannot be made lazy without breaking the contract.
+ */
 export const getAllFiles = async (
 	fs: Pick<typeof _fs.promises, 'readdir' | 'stat'>,
 	directoryPath: string,
@@ -32,6 +38,12 @@ export const getAllFiles = async (
 	return fileTree.flat();
 };
 
+/**
+ * Synchronous version of getAllFiles.
+ *
+ * Required for legacy packages (without exports field) where every JS file
+ * is a potential entry point. Cannot be made lazy without breaking the contract.
+ */
 export const getAllFilesSync = (
 	fs: Pick<typeof _fs, 'readdirSync' | 'statSync'>,
 	directoryPath: string,

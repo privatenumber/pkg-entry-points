@@ -9,3 +9,9 @@ export type StarMatch = [filePath: string, starMatch: string];
 export type ConditionsMap = {
 	[conditions: string]: (string | StarMatch)[] | null;
 };
+
+export type ParsedExport = {
+	subpath: string | string[];
+	target: string | string[];
+	conditions: string[];
+};

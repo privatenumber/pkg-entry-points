@@ -40,21 +40,13 @@ export const createAsyncFsAccess = (
 			}
 
 			const fullEntryPath = path.join(packagePath, entryPath);
+			const stat = await fs.stat(fullEntryPath);
+			if (stat.isDirectory()) {
+				return await this.readdirAll(entryPath);
+			}
 
-			try {
-				const stat = await fs.stat(fullEntryPath);
-				if (stat.isDirectory()) {
-					return await this.readdirAll(entryPath);
-				}
-
-				if (stat.isFile()) {
-					return [entryPath];
-				}
-
-				return [];
-			} catch {
-				// Entry was deleted between readdir and stat, or no permission
-				return [];
+			if (stat.isFile()) {
+				return [entryPath];
 			}
 		}));
 
@@ -91,21 +83,13 @@ export const createFsAccess = (
 			}
 
 			const fullEntryPath = path.join(packagePath, entryPath);
+			const stat = fs.statSync(fullEntryPath);
+			if (stat.isDirectory()) {
+				return this.readdirAll(entryPath);
+			}
 
-			try {
-				const stat = fs.statSync(fullEntryPath);
-				if (stat.isDirectory()) {
-					return this.readdirAll(entryPath);
-				}
-
-				if (stat.isFile()) {
-					return [entryPath];
-				}
-
-				return [];
-			} catch {
-				// Entry was deleted between readdir and stat, or no permission
-				return [];
+			if (stat.isFile()) {
+				return [entryPath];
 			}
 		}).filter((p): p is string => p !== null);
 	},

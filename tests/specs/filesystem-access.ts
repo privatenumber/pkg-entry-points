@@ -13,7 +13,7 @@ export default testSuite(({ describe }) => {
 					checkedPaths.push(path);
 					return path === './index.js' || path === './utils.js';
 				},
-				listDirectory(path: string) {
+				readdirAll(path: string) {
 					listedDirectories.push(path);
 					return [];
 				},
@@ -52,7 +52,7 @@ export default testSuite(({ describe }) => {
 					checkedPaths.push(path);
 					return true;
 				},
-				listDirectory(path: string) {
+				readdirAll(path: string) {
 					listedDirectories.push(path);
 					// Simulate ./src containing two files
 					if (path === './src') {
@@ -88,7 +88,7 @@ export default testSuite(({ describe }) => {
 					// Only ./index.js exists
 					return path === './index.js';
 				},
-				listDirectory: () => [],
+				readdirAll: () => [],
 			};
 
 			const result = analyzePackageExports(

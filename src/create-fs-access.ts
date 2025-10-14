@@ -3,12 +3,12 @@ import path from 'path';
 
 export type FileSystemAccess = {
 	fileExists(path: string): boolean;
-	listDirectory(directoryPath: string): string[];
+	readdirAll(directoryPath: string): string[];
 };
 
 export type AsyncFileSystemAccess = {
 	fileExists(path: string): Promise<boolean>;
-	listDirectory(directoryPath: string): Promise<string[]>;
+	readdirAll(directoryPath: string): Promise<string[]>;
 };
 
 /**
@@ -22,7 +22,7 @@ export const createAsyncFsAccess = (
 		const fullPath = path.join(packagePath, filePath);
 		return await fs.access(fullPath).then(() => true, () => false);
 	},
-	async listDirectory(directoryPath: string): Promise<string[]> {
+	async readdirAll(directoryPath: string): Promise<string[]> {
 		const fullPath = path.join(packagePath, directoryPath);
 
 		let entries: string[];
@@ -44,7 +44,7 @@ export const createAsyncFsAccess = (
 			try {
 				const stat = await fs.stat(fullEntryPath);
 				if (stat.isDirectory()) {
-					return await this.listDirectory(entryPath);
+					return await this.readdirAll(entryPath);
 				}
 
 				if (stat.isFile()) {
@@ -73,7 +73,7 @@ export const createFsAccess = (
 		const fullPath = path.join(packagePath, filePath);
 		return fs.existsSync(fullPath);
 	},
-	listDirectory(directoryPath: string): string[] {
+	readdirAll(directoryPath: string): string[] {
 		const fullPath = path.join(packagePath, directoryPath);
 
 		let entries: string[];
@@ -95,7 +95,7 @@ export const createFsAccess = (
 			try {
 				const stat = fs.statSync(fullEntryPath);
 				if (stat.isDirectory()) {
-					return this.listDirectory(entryPath);
+					return this.readdirAll(entryPath);
 				}
 
 				if (stat.isFile()) {

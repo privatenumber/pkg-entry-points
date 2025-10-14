@@ -11,7 +11,7 @@ export const resolveLegacyMain = (
 	fs: FileSystemAccess,
 ): PackageEntryPoints => {
 	const jsExtension = /\.(?:json|[cm]?js|d\.ts)$/;
-	const packageFiles = fs.listDirectory('.');
+	const packageFiles = fs.readdirAll('.');
 	const legacyExports = Object.fromEntries(
 		packageFiles
 			.filter(filePath => jsExtension.test(filePath))
@@ -43,7 +43,7 @@ export const resolveLegacyMainAsync = async (
 	fs: AsyncFileSystemAccess,
 ): Promise<PackageEntryPoints> => {
 	const jsExtension = /\.(?:json|[cm]?js|d\.ts)$/;
-	const packageFiles = await fs.listDirectory('.');
+	const packageFiles = await fs.readdirAll('.');
 	const legacyExports = Object.fromEntries(
 		packageFiles
 			.filter(filePath => jsExtension.test(filePath))

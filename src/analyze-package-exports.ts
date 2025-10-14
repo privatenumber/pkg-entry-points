@@ -93,7 +93,7 @@ const resolveAttemptsAsync = async (
 		} else if (path.includes(STAR)) {
 			const pathMatcher = createPathMatcher(path);
 			const directoryPath = extractDirectoryFromPattern(path);
-			const files = await fs.listDirectory(directoryPath);
+			const files = await fs.readdirAll(directoryPath);
 
 			const matches: StarMatch[] = files
 				.map((filePath) => {
@@ -132,7 +132,7 @@ const resolveAttempts = (
 		} else if (path.includes(STAR)) {
 			const pathMatcher = createPathMatcher(path);
 			const directoryPath = extractDirectoryFromPattern(path);
-			const files = fs.listDirectory(directoryPath);
+			const files = fs.readdirAll(directoryPath);
 
 			const matches: StarMatch[] = files
 				.map((filePath) => {

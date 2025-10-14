@@ -26,5 +26,25 @@ export default testSuite(({ describe }) => {
 
 			expect(result).toStrictEqual([]);
 		});
+
+		test('conditions object', () => {
+			const result = parsePackageExports({
+				import: './index.mjs',
+				require: './index.cjs',
+			});
+
+			expect(result).toStrictEqual([
+				{
+					subpath: '.',
+					target: './index.mjs',
+					conditions: ['import'],
+				},
+				{
+					subpath: '.',
+					target: './index.cjs',
+					conditions: ['require'],
+				},
+			]);
+		});
 	});
 });

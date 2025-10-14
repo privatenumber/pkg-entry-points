@@ -1,3 +1,6 @@
+import path from 'path';
+import type _fs from 'fs';
+
 /**
  * Filesystem abstraction for lazy file checking.
  *
@@ -38,12 +41,12 @@ export type AsyncFileSystemAccess = {
  * Helper to create FileSystemAccess from Node.js fs
  */
 export const createNodeFileSystem = (
-	fs: typeof import('fs'),
+	fs: typeof _fs,
 	packagePath: string,
 ): FileSystemAccess => ({
 	fileExists(filePath: string) {
 		try {
-			const fullPath = require('path').join(packagePath, filePath);
+			const fullPath = path.join(packagePath, filePath);
 			const stats = fs.statSync(fullPath);
 			return stats.isFile();
 		} catch {
@@ -53,13 +56,13 @@ export const createNodeFileSystem = (
 
 	listDirectory(directoryPath: string) {
 		try {
-			const fullPath = require('path').join(packagePath, directoryPath);
+			const fullPath = path.join(packagePath, directoryPath);
 			const entries = fs.readdirSync(fullPath);
 
 			return entries
 				.map((entry) => {
-					const entryPath = require('path').join(directoryPath, entry);
-					const fullEntryPath = require('path').join(packagePath, entryPath);
+					const entryPath = path.join(directoryPath, entry);
+					const fullEntryPath = path.join(packagePath, entryPath);
 					try {
 						const stats = fs.statSync(fullEntryPath);
 						return stats.isFile() ? entryPath : null;
@@ -78,12 +81,12 @@ export const createNodeFileSystem = (
  * Helper to create AsyncFileSystemAccess from Node.js fs.promises
  */
 export const createAsyncNodeFileSystem = (
-	fs: typeof import('fs').promises,
+	fs: typeof _fs.promises,
 	packagePath: string,
 ): AsyncFileSystemAccess => ({
 	async fileExists(filePath: string) {
 		try {
-			const fullPath = require('path').join(packagePath, filePath);
+			const fullPath = path.join(packagePath, filePath);
 			const stats = await fs.stat(fullPath);
 			return stats.isFile();
 		} catch {
@@ -93,13 +96,13 @@ export const createAsyncNodeFileSystem = (
 
 	async listDirectory(directoryPath: string) {
 		try {
-			const fullPath = require('path').join(packagePath, directoryPath);
+			const fullPath = path.join(packagePath, directoryPath);
 			const entries = await fs.readdir(fullPath);
 
 			const results = await Promise.all(
 				entries.map(async (entry) => {
-					const entryPath = require('path').join(directoryPath, entry);
-					const fullEntryPath = require('path').join(packagePath, entryPath);
+					const entryPath = path.join(directoryPath, entry);
+					const fullEntryPath = path.join(packagePath, entryPath);
 					try {
 						const stats = await fs.stat(fullEntryPath);
 						return stats.isFile() ? entryPath : null;

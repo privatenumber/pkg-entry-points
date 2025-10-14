@@ -119,7 +119,9 @@ export const analyzePackageExportsLazy = (
 					),
 				),
 			)
-			.map(([conditions, internalPath]): [string[], string] => [JSON.parse(conditions), internalPath])
+			.map(
+				([conditions, internalPath]): [string[], string] => [JSON.parse(conditions), internalPath],
+			)
 			.sort(([conditionsA], [conditionsB]) => conditionsA.length - conditionsB.length);
 
 		if (conditionsEntries.length > 0) {
@@ -173,11 +175,9 @@ function getConditionsLazy(
 					if (matches.length > 0) {
 						conditions[key] = matches;
 					}
-				} else {
+				} else if (fs.fileExists(value)) {
 					// Direct file check
-					if (fs.fileExists(value)) {
-						conditions[key] = [value];
-					}
+					conditions[key] = [value];
 				}
 			}
 		} else if (Array.isArray(value)) {
@@ -330,7 +330,9 @@ export const analyzePackageExportsLazyAsync = async (
 					),
 				),
 			)
-			.map(([conditions, internalPath]): [string[], string] => [JSON.parse(conditions), internalPath])
+			.map(
+				([conditions, internalPath]): [string[], string] => [JSON.parse(conditions), internalPath],
+			)
 			.sort(([conditionsA], [conditionsB]) => conditionsA.length - conditionsB.length);
 
 		if (conditionsEntries.length > 0) {

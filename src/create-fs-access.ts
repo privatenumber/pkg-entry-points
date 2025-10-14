@@ -10,46 +10,46 @@ export const createAsyncFsAccess = (
 	fs: typeof _fs.promises,
 ): AsyncFileSystemAccess => ({
 	async fileExists(filePath: string): Promise<boolean> {
-		try {
-			const fullPath = path.join(packagePath, filePath);
-			await fs.access(fullPath);
-			return true;
-		} catch {
-			return false;
-		}
+		const fullPath = path.join(packagePath, filePath);
+		return await fs.access(fullPath).then(() => true, () => false);
 	},
 	async listDirectory(directoryPath: string): Promise<string[]> {
+		const fullPath = path.join(packagePath, directoryPath);
+
+		let entries: string[];
 		try {
-			const fullPath = path.join(packagePath, directoryPath);
-			const entries = await fs.readdir(fullPath);
-
-			const results = await Promise.all(entries.filter(entry => entry !== 'node_modules').map(async (entry) => {
-				let entryPath = path.join(directoryPath, entry);
-				if (!entryPath.startsWith('./')) {
-					entryPath = `./${entryPath}`;
-				}
-
-				const fullEntryPath = path.join(packagePath, entryPath);
-				try {
-					const stat = await fs.stat(fullEntryPath);
-					if (stat.isDirectory()) {
-						return await this.listDirectory(entryPath);
-					}
-
-					if (stat.isFile()) {
-						return [entryPath];
-					}
-
-					return [];
-				} catch {
-					return [];
-				}
-			}));
-
-			return results.flat().filter((p): p is string => p !== null);
+			entries = await fs.readdir(fullPath);
 		} catch {
+			// Directory doesn't exist or no permission
 			return [];
 		}
+
+		const results = await Promise.all(entries.filter(entry => entry !== 'node_modules').map(async (entry) => {
+			let entryPath = path.join(directoryPath, entry);
+			if (!entryPath.startsWith('./')) {
+				entryPath = `./${entryPath}`;
+			}
+
+			const fullEntryPath = path.join(packagePath, entryPath);
+
+			try {
+				const stat = await fs.stat(fullEntryPath);
+				if (stat.isDirectory()) {
+					return await this.listDirectory(entryPath);
+				}
+
+				if (stat.isFile()) {
+					return [entryPath];
+				}
+
+				return [];
+			} catch {
+				// Entry was deleted between readdir and stat, or no permission
+				return [];
+			}
+		}));
+
+		return results.flat().filter((p): p is string => p !== null);
 	},
 });
 
@@ -61,43 +61,43 @@ export const createFsAccess = (
 	fs: typeof _fs,
 ): FileSystemAccess => ({
 	fileExists(filePath: string): boolean {
-		try {
-			const fullPath = path.join(packagePath, filePath);
-			fs.accessSync(fullPath);
-			return true;
-		} catch {
-			return false;
-		}
+		const fullPath = path.join(packagePath, filePath);
+		return fs.existsSync(fullPath);
 	},
 	listDirectory(directoryPath: string): string[] {
+		const fullPath = path.join(packagePath, directoryPath);
+
+		let entries: string[];
 		try {
-			const fullPath = path.join(packagePath, directoryPath);
-			const entries = fs.readdirSync(fullPath);
-
-			return entries.filter(entry => entry !== 'node_modules').flatMap((entry) => {
-				let entryPath = path.join(directoryPath, entry);
-				if (!entryPath.startsWith('./')) {
-					entryPath = `./${entryPath}`;
-				}
-
-				const fullEntryPath = path.join(packagePath, entryPath);
-				try {
-					const stat = fs.statSync(fullEntryPath);
-					if (stat.isDirectory()) {
-						return this.listDirectory(entryPath);
-					}
-
-					if (stat.isFile()) {
-						return [entryPath];
-					}
-
-					return [];
-				} catch {
-					return [];
-				}
-			}).filter((p): p is string => p !== null);
+			entries = fs.readdirSync(fullPath);
 		} catch {
+			// Directory doesn't exist or no permission
 			return [];
 		}
+
+		return entries.filter(entry => entry !== 'node_modules').flatMap((entry) => {
+			let entryPath = path.join(directoryPath, entry);
+			if (!entryPath.startsWith('./')) {
+				entryPath = `./${entryPath}`;
+			}
+
+			const fullEntryPath = path.join(packagePath, entryPath);
+
+			try {
+				const stat = fs.statSync(fullEntryPath);
+				if (stat.isDirectory()) {
+					return this.listDirectory(entryPath);
+				}
+
+				if (stat.isFile()) {
+					return [entryPath];
+				}
+
+				return [];
+			} catch {
+				// Entry was deleted between readdir and stat, or no permission
+				return [];
+			}
+		}).filter((p): p is string => p !== null);
 	},
 });

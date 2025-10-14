@@ -30,8 +30,11 @@ jobs:
       - name: Type Check
         run: pnpm type-check
 
-      - name: Test
-        run: pnpm test
-
       - name: Lint
         run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test

@@ -1,5 +1,5 @@
 import { testSuite, expect } from 'manten';
-import type { FileSystemAccess } from '../../src/filesystem-access.js';
+import type { FileSystemAccess } from '../../src/lazy-analyzer.js';
 import { analyzePackageExportsLazy } from '../../src/index.js';
 
 export default testSuite(({ describe }) => {
@@ -9,11 +9,11 @@ export default testSuite(({ describe }) => {
 			const listedDirectories: string[] = [];
 
 			const mockFs: FileSystemAccess = {
-				fileExists(path) {
+				fileExists(path: string) {
 					checkedPaths.push(path);
 					return path === './index.js' || path === './utils.js';
 				},
-				listDirectory(path) {
+				listDirectory(path: string) {
 					listedDirectories.push(path);
 					return [];
 				},
@@ -48,11 +48,11 @@ export default testSuite(({ describe }) => {
 			const listedDirectories: string[] = [];
 
 			const mockFs: FileSystemAccess = {
-				fileExists(path) {
+				fileExists(path: string) {
 					checkedPaths.push(path);
 					return true;
 				},
-				listDirectory(path) {
+				listDirectory(path: string) {
 					listedDirectories.push(path);
 					// Simulate ./src containing two files
 					if (path === './src') {
@@ -84,7 +84,7 @@ export default testSuite(({ describe }) => {
 
 		test('skips missing files', () => {
 			const mockFs: FileSystemAccess = {
-				fileExists(path) {
+				fileExists(path: string) {
 					// Only ./index.js exists
 					return path === './index.js';
 				},

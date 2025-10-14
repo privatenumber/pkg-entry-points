@@ -1,8 +1,17 @@
 import type { PackageJson } from 'type-fest';
-import type { FileSystemAccess, AsyncFileSystemAccess } from './filesystem-access';
 import type { PackageEntryPoints, ConditionsMap, StarMatch } from './types.js';
 import { createPathMatcher, pathMatches, type PathMatcher } from './utils/path-matcher.js';
 import { STAR } from './utils/constants.js';
+
+export type FileSystemAccess = {
+	fileExists(path: string): boolean;
+	listDirectory(directoryPath: string): string[];
+};
+
+export type AsyncFileSystemAccess = {
+	fileExists(path: string): Promise<boolean>;
+	listDirectory(directoryPath: string): Promise<string[]>;
+};
 
 /**
  * Analyze exports with lazy filesystem access.
@@ -31,7 +40,7 @@ export const analyzePackageExportsLazy = (
 		}
 		// Check if it's already a subpath object (keys start with '.')
 		if (keys[0][0] === '.') {
-			exportsObject = exports as Record<string, Exports>;
+			exportsObject = exports as Record<string, PackageJson.Exports>;
 		} else {
 			// It's a conditions object at root
 			exportsObject = { '.': exports };

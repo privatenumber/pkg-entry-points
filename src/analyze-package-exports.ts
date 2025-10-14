@@ -33,7 +33,6 @@ const extractDirectoryFromPattern = (pattern: string): string => {
 const getConditionsAsync = async (
 	fs: AsyncFileSystemAccess,
 	exports: PackageJson.Exports,
-	subpathPattern?: string,
 	conditionsPath: string[] = [],
 ): Promise<ConditionsMap> => {
 	const conditions: ConditionsMap = {};
@@ -100,7 +99,6 @@ const getConditionsAsync = async (
 const getConditions = (
 	fs: FileSystemAccess,
 	exports: PackageJson.Exports,
-	subpathPattern?: string,
 	conditionsPath: string[] = [],
 ): ConditionsMap => {
 	const conditions: ConditionsMap = {};
@@ -216,7 +214,7 @@ export const analyzePackageExports = (
 	// Walk each subpath
 	for (const rawSubpath of Object.keys(exportsObject)) {
 		const subpathExports = exportsObject[rawSubpath]!;
-		const conditions = getConditions(fs, subpathExports, rawSubpath);
+		const conditions = getConditions(fs, subpathExports);
 
 		const subpathStar = rawSubpath.includes(STAR);
 
@@ -337,7 +335,7 @@ export const analyzePackageExportsAsync = async (
 	// Walk each subpath
 	for (const rawSubpath of Object.keys(exportsObject)) {
 		const subpathExports = exportsObject[rawSubpath]!;
-		const conditions = await getConditionsAsync(fs, subpathExports, rawSubpath);
+		const conditions = await getConditionsAsync(fs, subpathExports);
 
 		const subpathStar = rawSubpath.includes(STAR);
 

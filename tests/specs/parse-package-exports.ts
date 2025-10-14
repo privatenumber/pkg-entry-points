@@ -172,5 +172,48 @@ export default testSuite(({ describe }) => {
 				},
 			]);
 		});
+
+		test('complex exports with multiple features', () => {
+			const result = parsePackageExports({
+				'.': {
+					import: './index.mjs',
+					require: './index.cjs',
+				},
+				'./utils': './utils.js',
+				'./features/*': {
+					node: './dist/node/*/index.js',
+					default: './dist/browser/*/index.js',
+				},
+				'./private': null,
+			});
+
+			expect(result).toStrictEqual([
+				{
+					subpath: '.',
+					target: './index.mjs',
+					conditions: ['import'],
+				},
+				{
+					subpath: '.',
+					target: './index.cjs',
+					conditions: ['require'],
+				},
+				{
+					subpath: './utils',
+					target: './utils.js',
+					conditions: ['default'],
+				},
+				{
+					subpath: ['./features/', ''],
+					target: ['./dist/node/', '/index.js'],
+					conditions: ['node'],
+				},
+				{
+					subpath: ['./features/', ''],
+					target: ['./dist/browser/', '/index.js'],
+					conditions: ['default'],
+				},
+			]);
+		});
 	});
 });

@@ -44,7 +44,10 @@ const traverseExports = (
 
 				traverseExports(
 					(exports as PackageJson.ExportConditions)[subpath]!,
-					{ subpath, conditionsPath: [] },
+					{
+						subpath,
+						conditionsPath: [],
+					},
 					results,
 				);
 			}
@@ -55,11 +58,15 @@ const traverseExports = (
 					continue;
 				}
 
-				const newConditionsPath = [...context.conditionsPath, condition].sort();
+				const newConditionsPath = [...context.conditionsPath, condition];
+				newConditionsPath.sort();
 
 				traverseExports(
 					(exports as PackageJson.ExportConditions)[condition]!,
-					{ ...context, conditionsPath: newConditionsPath },
+					{
+						...context,
+						conditionsPath: newConditionsPath,
+					},
 					results,
 				);
 			}
@@ -72,7 +79,14 @@ export const parsePackageExports = (
 ): ParsedExport[] => {
 	const results: ParsedExport[] = [];
 
-	traverseExports(exports, { subpath: '.', conditionsPath: [] }, results);
+	traverseExports(
+		exports,
+		{
+			subpath: '.',
+			conditionsPath: [],
+		},
+		results,
+	);
 
 	return results;
 };

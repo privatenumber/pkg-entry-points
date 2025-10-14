@@ -6,36 +6,28 @@ import path from 'path';
  *
  * Required for legacy packages (without exports field) where every JS file
  * is a potential entry point. Cannot be made lazy without breaking the contract.
+ *
+ * Uses recursive readdir (Node 20.1.0+) to get all files in a single syscall.
  */
 export const getAllFiles = async (
-	fs: Pick<typeof _fs.promises, 'readdir' | 'stat'>,
+	fs: Pick<typeof _fs.promises, 'readdir'>,
 	directoryPath: string,
-	dontShortenPath?: boolean,
 ): Promise<string[]> => {
-	const directoryFiles = await fs.readdir(directoryPath);
-	const fileTree = await Promise.all(
-		directoryFiles.filter(fileName => fileName !== 'node_modules').map(async (fileName) => {
-			const filePath = path.join(directoryPath, fileName);
-			const stat = await fs.stat(filePath);
+	const entries = await fs.readdir(directoryPath, {
+		recursive: true,
+		withFileTypes: true,
+	});
 
-			if (stat.isDirectory()) {
-				const files = await getAllFiles(fs, filePath, true);
-				return (
-					dontShortenPath
-						? files
-						: files.map(file => `./${path.relative(directoryPath, file)}`)
-				);
+	return entries
+		.filter((entry) => {
+			if (!entry.isFile()) {
+				return false;
 			}
 
-			return (
-				dontShortenPath
-					? filePath
-					: `./${path.relative(directoryPath, filePath)}`
-			);
-		}),
-	);
-
-	return fileTree.flat();
+			const relativePath = path.relative(directoryPath, entry.parentPath);
+			return !relativePath.split(path.sep).includes('node_modules');
+		})
+		.map(entry => `./${path.join(path.relative(directoryPath, entry.parentPath), entry.name)}`);
 };
 
 /**
@@ -43,32 +35,26 @@ export const getAllFiles = async (
  *
  * Required for legacy packages (without exports field) where every JS file
  * is a potential entry point. Cannot be made lazy without breaking the contract.
+ *
+ * Uses recursive readdir (Node 20.1.0+) to get all files in a single syscall.
  */
 export const getAllFilesSync = (
-	fs: Pick<typeof _fs, 'readdirSync' | 'statSync'>,
+	fs: Pick<typeof _fs, 'readdirSync'>,
 	directoryPath: string,
-	dontShortenPath?: boolean,
 ): string[] => {
-	const directoryFiles = fs.readdirSync(directoryPath);
-	const fileTree = directoryFiles.filter(fileName => fileName !== 'node_modules').map((fileName) => {
-		const filePath = path.join(directoryPath, fileName);
-		const stat = fs.statSync(filePath);
-
-		if (stat.isDirectory()) {
-			const files = getAllFilesSync(fs, filePath, true);
-			return (
-				dontShortenPath
-					? files
-					: files.map(file => `./${path.relative(directoryPath, file)}`)
-			);
-		}
-
-		return (
-			dontShortenPath
-				? filePath
-				: `./${path.relative(directoryPath, filePath)}`
-		);
+	const entries = fs.readdirSync(directoryPath, {
+		recursive: true,
+		withFileTypes: true,
 	});
 
-	return fileTree.flat();
+	return entries
+		.filter((entry) => {
+			if (!entry.isFile()) {
+				return false;
+			}
+
+			const relativePath = path.relative(directoryPath, entry.parentPath);
+			return !relativePath.split(path.sep).includes('node_modules');
+		})
+		.map(entry => `./${path.join(path.relative(directoryPath, entry.parentPath), entry.name)}`);
 };

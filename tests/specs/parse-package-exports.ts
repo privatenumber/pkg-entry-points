@@ -46,5 +46,33 @@ export default testSuite(({ describe }) => {
 				},
 			]);
 		});
+
+		test('nested conditions', () => {
+			const result = parsePackageExports({
+				node: {
+					import: './node.mjs',
+					require: './node.cjs',
+				},
+				default: './index.js',
+			});
+
+			expect(result).toStrictEqual([
+				{
+					subpath: '.',
+					target: './node.mjs',
+					conditions: ['import', 'node'],
+				},
+				{
+					subpath: '.',
+					target: './node.cjs',
+					conditions: ['node', 'require'],
+				},
+				{
+					subpath: '.',
+					target: './index.js',
+					conditions: ['default'],
+				},
+			]);
+		});
 	});
 });

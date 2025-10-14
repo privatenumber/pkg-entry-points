@@ -30,123 +30,40 @@ const extractDirectoryFromPattern = (pattern: string): string => {
 	return lastSlash === -1 ? '.' : beforeStar.slice(0, lastSlash);
 };
 
-const getConditionsAsync = async (
-	fs: AsyncFileSystemAccess,
-	exports: PackageJson.Exports,
-	conditionsPath: string[] = [],
-): Promise<ConditionsMap> => {
-	const conditions: ConditionsMap = {};
-
-	const recurse = async (
-		value: PackageJson.Exports,
-		currentConditions: string[],
-	): Promise<void> => {
-		if (value === null) {
-			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
-			if (!Object.hasOwn(conditions, key)) {
-				conditions[key] = null;
-			}
-		} else if (typeof value === 'string') {
-			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
-
-			if (!Object.hasOwn(conditions, key)) {
-				if (value.includes(STAR)) {
-					const pathMatcher = createPathMatcher(value);
-					const directoryPath = extractDirectoryFromPattern(value);
-					const files = await fs.listDirectory(directoryPath);
-
-					const matches: StarMatch[] = files
-						.map((filePath) => {
-							const starValue = pathMatches(pathMatcher, filePath);
-							return starValue === undefined ? null : [filePath, starValue] as StarMatch;
-						})
-						.filter((match): match is StarMatch => match !== null);
-
-					if (matches.length > 0) {
-						conditions[key] = matches;
-					}
-				} else if (await fs.fileExists(value)) {
-					conditions[key] = [value];
-				}
-			}
-		} else if (Array.isArray(value)) {
-			for (const item of value) {
-				await recurse(item, currentConditions);
-			}
-		} else if (value && typeof value === 'object') {
-			for (const condition in value) {
-				if (!Object.hasOwn(value, condition)) {
-					continue;
-				}
-
-				const newConditions = currentConditions.slice();
-				if (!newConditions.includes(condition)) {
-					newConditions.push(condition);
-				}
-
-				await recurse(value[condition]!, newConditions.sort());
-			}
-		}
-	};
-
-	await recurse(exports, conditionsPath);
-	return conditions;
+type ExportAttempt = {
+	key: string;
+	path: string | null;
 };
 
 /**
- * Recursively walk exports tree, checking files on-demand
+ * Phase 1: Collect all condition→path attempts by walking exports tree
+ * Pure function - no filesystem access
  */
-const getConditions = (
-	fs: FileSystemAccess,
+const collectExportAttempts = (
 	exports: PackageJson.Exports,
 	conditionsPath: string[] = [],
-): ConditionsMap => {
-	const conditions: ConditionsMap = {};
+): ExportAttempt[] => {
+	const attempts: ExportAttempt[] = [];
 
 	const recurse = (
 		value: PackageJson.Exports,
 		currentConditions: string[],
 	): void => {
 		if (value === null) {
-			// Blocking export
-			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
-			if (!Object.hasOwn(conditions, key)) {
-				conditions[key] = null;
-			}
+			attempts.push({
+				key: JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions),
+				path: null,
+			});
 		} else if (typeof value === 'string') {
-			// Leaf node - actual file path
-			const key = JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions);
-
-			if (!Object.hasOwn(conditions, key)) {
-				// Check if file exists (lazy)
-				if (value.includes(STAR)) {
-					// Wildcard - need to list directory
-					const pathMatcher = createPathMatcher(value);
-					const directoryPath = extractDirectoryFromPattern(value);
-					const files = fs.listDirectory(directoryPath);
-
-					const matches: StarMatch[] = files
-						.map((filePath) => {
-							const starValue = pathMatches(pathMatcher, filePath);
-							return starValue === undefined ? null : [filePath, starValue] as StarMatch;
-						})
-						.filter((match): match is StarMatch => match !== null);
-
-					if (matches.length > 0) {
-						conditions[key] = matches;
-					}
-				} else if (fs.fileExists(value)) {
-					// Direct file check
-					conditions[key] = [value];
-				}
-			}
+			attempts.push({
+				key: JSON.stringify(currentConditions.length === 0 ? ['default'] : currentConditions),
+				path: value,
+			});
 		} else if (Array.isArray(value)) {
-			// Fallback array
 			for (const item of value) {
 				recurse(item, currentConditions);
 			}
 		} else if (value && typeof value === 'object') {
-			// Conditions object
 			for (const condition in value) {
 				if (!Object.hasOwn(value, condition)) {
 					continue;
@@ -163,7 +80,103 @@ const getConditions = (
 	};
 
 	recurse(exports, conditionsPath);
+	return attempts;
+};
+
+/**
+ * Phase 2: Resolve attempts with async filesystem access
+ */
+const resolveAttemptsAsync = async (
+	attempts: ExportAttempt[],
+	fs: AsyncFileSystemAccess,
+): Promise<ConditionsMap> => {
+	const conditions: ConditionsMap = {};
+
+	for (const { key, path } of attempts) {
+		if (Object.hasOwn(conditions, key)) {
+			continue; // First-wins semantics
+		}
+
+		if (path === null) {
+			conditions[key] = null;
+		} else if (path.includes(STAR)) {
+			const pathMatcher = createPathMatcher(path);
+			const directoryPath = extractDirectoryFromPattern(path);
+			const files = await fs.listDirectory(directoryPath);
+
+			const matches: StarMatch[] = files
+				.map((filePath) => {
+					const starValue = pathMatches(pathMatcher, filePath);
+					return starValue === undefined ? null : [filePath, starValue] as StarMatch;
+				})
+				.filter((match): match is StarMatch => match !== null);
+
+			if (matches.length > 0) {
+				conditions[key] = matches;
+			}
+		} else if (await fs.fileExists(path)) {
+			conditions[key] = [path];
+		}
+	}
+
 	return conditions;
+};
+
+/**
+ * Phase 2: Resolve attempts with sync filesystem access
+ */
+const resolveAttempts = (
+	attempts: ExportAttempt[],
+	fs: FileSystemAccess,
+): ConditionsMap => {
+	const conditions: ConditionsMap = {};
+
+	for (const { key, path } of attempts) {
+		if (Object.hasOwn(conditions, key)) {
+			continue; // First-wins semantics
+		}
+
+		if (path === null) {
+			conditions[key] = null;
+		} else if (path.includes(STAR)) {
+			const pathMatcher = createPathMatcher(path);
+			const directoryPath = extractDirectoryFromPattern(path);
+			const files = fs.listDirectory(directoryPath);
+
+			const matches: StarMatch[] = files
+				.map((filePath) => {
+					const starValue = pathMatches(pathMatcher, filePath);
+					return starValue === undefined ? null : [filePath, starValue] as StarMatch;
+				})
+				.filter((match): match is StarMatch => match !== null);
+
+			if (matches.length > 0) {
+				conditions[key] = matches;
+			}
+		} else if (fs.fileExists(path)) {
+			conditions[key] = [path];
+		}
+	}
+
+	return conditions;
+};
+
+const getConditionsAsync = async (
+	fs: AsyncFileSystemAccess,
+	exports: PackageJson.Exports,
+	conditionsPath: string[] = [],
+): Promise<ConditionsMap> => {
+	const attempts = collectExportAttempts(exports, conditionsPath);
+	return resolveAttemptsAsync(attempts, fs);
+};
+
+const getConditions = (
+	fs: FileSystemAccess,
+	exports: PackageJson.Exports,
+	conditionsPath: string[] = [],
+): ConditionsMap => {
+	const attempts = collectExportAttempts(exports, conditionsPath);
+	return resolveAttempts(attempts, fs);
 };
 
 /**

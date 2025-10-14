@@ -136,5 +136,24 @@ export default testSuite(({ describe }) => {
 				});
 			}).toThrow('Subpath pattern can contain at most one wildcard: ./*/*');
 		});
+
+		test('fallback array', () => {
+			const result = parsePackageExports({
+				'.': ['./modern.js', './fallback.js'],
+			});
+
+			expect(result).toStrictEqual([
+				{
+					subpath: '.',
+					target: './modern.js',
+					conditions: ['default'],
+				},
+				{
+					subpath: '.',
+					target: './fallback.js',
+					conditions: ['default'],
+				},
+			]);
+		});
 	});
 });

@@ -38,6 +38,13 @@ const traverseExports = (
 		return;
 	}
 
+	if (Array.isArray(exports)) {
+		for (const entry of exports) {
+			traverseExports(entry, context, results);
+		}
+		return;
+	}
+
 	if (typeof exports === 'object' && exports) {
 		const keys = Object.keys(exports);
 

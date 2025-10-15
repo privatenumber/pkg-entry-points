@@ -12,45 +12,20 @@ const traverseExports = (
 	context: ParseContext,
 	results: ParsedExport[],
 ): void => {
-	if (exports === null) {
+	if (exports === null || typeof exports === 'string') {
 		const subpathHasStar = context.subpath.includes(STAR);
 
 		// Validate subpath wildcard count
-		if (subpathHasStar) {
-			const subpathParts = context.subpath.split(STAR);
-			if (subpathParts.length > 2) {
-				throw new Error(`Subpath pattern can contain at most one wildcard: ${context.subpath}`);
-			}
+		if (subpathHasStar && context.subpath.split(STAR).length > 2) {
+			throw new Error(`Subpath pattern can contain at most one wildcard: ${context.subpath}`);
 		}
 
 		results.push({
 			subpath: subpathHasStar ? context.subpath.split(STAR) : context.subpath,
-			target: null,
-			conditions: context.conditionsPath.length > 0
-				? context.conditionsPath
-				: ['default'],
-		});
-		return;
-	}
-
-	if (typeof exports === 'string') {
-		const subpathHasStar = context.subpath.includes(STAR);
-		const targetHasStar = exports.includes(STAR);
-
-		// Validate subpath wildcard count
-		if (subpathHasStar) {
-			const subpathParts = context.subpath.split(STAR);
-			if (subpathParts.length > 2) {
-				throw new Error(`Subpath pattern can contain at most one wildcard: ${context.subpath}`);
-			}
-		}
-
-		results.push({
-			subpath: subpathHasStar ? context.subpath.split(STAR) : context.subpath,
-			target: targetHasStar ? exports.split(STAR) : exports,
-			conditions: context.conditionsPath.length > 0
-				? context.conditionsPath
-				: ['default'],
+			target: exports === null ? null
+				: exports.includes(STAR) ? exports.split(STAR)
+				: exports,
+			conditions: context.conditionsPath.length > 0 ? context.conditionsPath : ['default'],
 		});
 		return;
 	}
@@ -64,7 +39,6 @@ const traverseExports = (
 
 	if (typeof exports === 'object' && exports) {
 		const keys = Object.keys(exports);
-
 		if (keys.length === 0) {
 			return;
 		}
@@ -74,37 +48,27 @@ const traverseExports = (
 		if (isPathsObject) {
 			// Multiple subpaths
 			for (const subpath of keys) {
-				if (!Object.hasOwn(exports, subpath)) {
-					continue;
+				if (Object.hasOwn(exports, subpath)) {
+					traverseExports(
+						(exports as PackageJson.ExportConditions)[subpath]!,
+						{ subpath, conditionsPath: [] },
+						results,
+					);
 				}
-
-				traverseExports(
-					(exports as PackageJson.ExportConditions)[subpath]!,
-					{
-						subpath,
-						conditionsPath: [],
-					},
-					results,
-				);
 			}
 		} else {
 			// Conditions object
 			for (const condition of keys) {
-				if (!Object.hasOwn(exports, condition)) {
-					continue;
+				if (Object.hasOwn(exports, condition)) {
+					const newConditionsPath = [...context.conditionsPath, condition];
+					newConditionsPath.sort();
+
+					traverseExports(
+						(exports as PackageJson.ExportConditions)[condition]!,
+						{ ...context, conditionsPath: newConditionsPath },
+						results,
+					);
 				}
-
-				const newConditionsPath = [...context.conditionsPath, condition];
-				newConditionsPath.sort();
-
-				traverseExports(
-					(exports as PackageJson.ExportConditions)[condition]!,
-					{
-						...context,
-						conditionsPath: newConditionsPath,
-					},
-					results,
-				);
 			}
 		}
 	}
@@ -117,10 +81,7 @@ export const parsePackageExports = (
 
 	traverseExports(
 		exports,
-		{
-			subpath: '.',
-			conditionsPath: [],
-		},
+		{ subpath: '.', conditionsPath: [] },
 		results,
 	);
 

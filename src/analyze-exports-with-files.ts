@@ -43,9 +43,11 @@ export const analyzeExportsWithFiles = (
 		}
 
 		// Expand wildcards or validate static paths
-		const filesToAdd: Array<{ subpath: string;
+		const filesToAdd: Array<{
+			subpath: string;
 			file: string;
-			isWildcard: boolean; }> = [];
+			isWildcard: boolean;
+		}> = [];
 
 		if (isWildcard) {
 			const subpathArray = entry.subpath as string[];

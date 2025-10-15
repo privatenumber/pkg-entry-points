@@ -40,4 +40,5 @@ export const getPackageEntryPointsSync = (
 };
 
 export { parsePackageExports } from './parse-package-exports.js';
+export { analyzeExportsWithFiles } from './analyze-exports-with-files.js';
 export type { ParsedExport, PackageEntryPoints } from './types.js';

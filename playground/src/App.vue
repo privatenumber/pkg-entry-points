@@ -2,11 +2,8 @@
 import { ref, computed, watch } from 'vue';
 import MonacoEditor from './components/MonacoEditor.vue';
 import ResultsPanel from './components/ResultsPanel.vue';
-import { getPackageEntryPointsSync, parsePackageExports } from 'pkg-entry-points';
-import { MockFileSystem } from './mock-fs';
+import { parsePackageExports, analyzeExportsWithFiles } from 'pkg-entry-points';
 import type { PackageEntryPoints, ParsedExport } from 'pkg-entry-points';
-
-const mockFs = new MockFileSystem();
 
 const examples = {
 	basic: {
@@ -80,35 +77,28 @@ function analyzePackage(content: string) {
 		console.log('🔍 Starting package analysis');
 
 		const packageJson = JSON.parse(content);
-
-		mockFs.clear();
-		mockFs.setFile('package.json', content);
-
-		const referencedFiles = extractFilesFromExports(packageJson.exports);
-		console.log('📄 Files extracted from exports:', Array.from(referencedFiles));
-
-		for (const file of referencedFiles) {
-			mockFs.setFile(file, `// File: ${file}`);
-		}
-
-		generatedFiles.value = Array.from(mockFs.getAllFiles())
-			.filter(f => f !== 'package.json')
-			.sort();
-
-		console.log('Available files in mock fs:', mockFs.getAllFiles());
 		console.log('📦 Analyzing exports:', packageJson.exports);
 
 		// Parse exports structure
 		if (packageJson.exports) {
 			parsedExports.value = parsePackageExports(packageJson.exports);
 			console.log('📋 Parsed exports:', parsedExports.value);
+
+			// Extract files from parsed exports
+			const referencedFiles = extractFilesFromExports(packageJson.exports);
+			console.log('📄 Files extracted from exports:', Array.from(referencedFiles));
+
+			generatedFiles.value = Array.from(referencedFiles).sort();
+
+			// Analyze exports with files to get final entry points
+			entryPoints.value = analyzeExportsWithFiles(parsedExports.value, generatedFiles.value);
+			console.log('✨ Entry points found:', entryPoints.value);
 		} else {
 			parsedExports.value = [];
+			generatedFiles.value = [];
+			entryPoints.value = {};
 		}
 
-		entryPoints.value = getPackageEntryPointsSync('.', mockFs as any);
-
-		console.log('✨ Entry points found:', entryPoints.value);
 		console.log('═══════════════════════════════════════');
 
 		error.value = null;

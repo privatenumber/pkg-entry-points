@@ -1,6 +1,8 @@
 import type _fs from 'fs';
 import path from 'path';
 
+const nodeModulesPath = `node_modules${path.sep}`;
+
 /**
  * Recursively list all files in a directory.
  *
@@ -19,19 +21,17 @@ export const getAllFiles = async (
 	});
 
 	const result: string[] = [];
-	const nodeModulesPath = `${path.sep}node_modules${path.sep}`;
-
 	for (const entry of entries) {
 		if (!entry.isFile()) {
 			continue;
 		}
 
-		const relativePath = path.relative(directoryPath, entry.parentPath);
-		if (relativePath.includes(nodeModulesPath)) {
+		const relativeParentPath = path.relative(directoryPath, entry.parentPath);
+		if (relativeParentPath.startsWith(nodeModulesPath)) {
 			continue;
 		}
 
-		result.push(`./${path.join(relativePath, entry.name)}`);
+		result.push(`./${path.join(relativeParentPath, entry.name)}`);
 	}
 
 	return result;
@@ -55,19 +55,17 @@ export const getAllFilesSync = (
 	});
 
 	const result: string[] = [];
-	const nodeModulesPath = `${path.sep}node_modules${path.sep}`;
-
 	for (const entry of entries) {
 		if (!entry.isFile()) {
 			continue;
 		}
 
-		const relativePath = path.relative(directoryPath, entry.parentPath);
-		if (relativePath.includes(nodeModulesPath)) {
+		const relativeParentPath = path.relative(directoryPath, entry.parentPath);
+		if (relativeParentPath.startsWith(nodeModulesPath)) {
 			continue;
 		}
 
-		result.push(`./${path.join(relativePath, entry.name)}`);
+		result.push(`./${path.join(relativeParentPath, entry.name)}`);
 	}
 
 	return result;

@@ -158,6 +158,47 @@ export default testSuite(({ describe }) => {
 					});
 				});
 
+				test('should only exclude root node_modules, not nested', async () => {
+					await using pkg = await createPackage({
+						pkg: {
+							'package.json': createPackageJson({
+								main: './index.js',
+							}),
+							'index.js': 'module.exports = 123',
+							'dist/file.js': 'module.exports = 789',
+							node_modules: {
+								'root-dep': {
+									'index.js': 'module.exports = 456',
+								},
+							},
+							'dist/node_modules': {
+								'nested-dep': {
+									'index.js': 'module.exports = 999',
+								},
+							},
+						},
+					});
+
+					const packageExports = await getPackageEntryPoints(pkg.packagePath);
+					expect(packageExports).toStrictEqual({
+						'.': [
+							[['default'], './index.js'],
+						],
+						'./index.js': [
+							[['default'], './index.js'],
+						],
+						'./dist/file.js': [
+							[['default'], './dist/file.js'],
+						],
+						'./dist/node_modules/nested-dep/index.js': [
+							[['default'], './dist/node_modules/nested-dep/index.js'],
+						],
+						'./package.json': [
+							[['default'], './package.json'],
+						],
+					});
+				});
+
 				describe('extensionless main', ({ test }) => {
 					test('explicitly extensionless', async () => {
 						await using pkg = await createPackage({

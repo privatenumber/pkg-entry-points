@@ -1,11 +1,11 @@
 {
-	"name": "package.json-exports-playground",
 	"private": true,
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
 		"build": "tsc && vite build",
-		"preview": "vite preview"
+		"preview": "vite preview",
+		"type-check": "vue-tsc"
 	},
 	"devDependencies": {
 		"@tailwindcss/vite": "^4.1.14",

@@ -4,7 +4,6 @@ import {
 	analyzeExportsWithFiles,
 	type PackageEntryPoints,
 	type ParsedExport,
-	type ParseResult,
 } from 'pkg-entry-points';
 import { ref, computed, watch } from 'vue';
 import type { PackageJsonWithName } from '../types.js';

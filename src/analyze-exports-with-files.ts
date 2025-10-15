@@ -7,10 +7,14 @@ export const analyzeExportsWithFiles = (
 ): PackageEntryPoints => {
 	// Build map of subpath -> conditions -> file path
 	// Track whether each entry came from a wildcard or static subpath
-	const entries = new Map<string, Map<string, { path: string | null;
-		isWildcard: boolean; }>>();
-	const wildcardBlocks: Array<{ subpath: string[];
-		conditions: string; }> = [];
+	const entries = new Map<string, Map<string, {
+		path: string | null;
+		isWildcard: boolean;
+	}>>();
+	const wildcardBlocks: Array<{
+		subpath: string[];
+		conditions: string;
+	}> = [];
 
 	for (const entry of parsed) {
 		const isWildcard = Array.isArray(entry.subpath);

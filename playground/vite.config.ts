@@ -16,4 +16,11 @@ export default defineConfig({
 			path: '/src/node-shim.ts',
 		},
 	},
+	test: {
+		browser: {
+			enabled: true,
+			provider: 'playwright',
+			name: 'chromium',
+		},
+	},
 });

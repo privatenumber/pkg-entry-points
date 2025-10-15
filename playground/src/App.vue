@@ -85,6 +85,11 @@ const updateUrl = (content: string) => {
 	window.history.replaceState({}, '', `#${encoded}`);
 };
 
+// Set initial URL hash if not present
+if (!window.location.hash) {
+	updateUrl(initialContent);
+}
+
 const handleContentChange = (value: string) => {
 	updateUrl(value);
 	jsonError.value = null;

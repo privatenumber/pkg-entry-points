@@ -1,16 +1,91 @@
 <script setup lang="ts">
-import type { PackageEntryPoints, ParsedExport } from 'pkg-entry-points';
-import { computed } from 'vue';
+import {
+	parsePackageExports,
+	analyzeExportsWithFiles,
+	type PackageEntryPoints,
+	type ParsedExport,
+} from 'pkg-entry-points';
+import type { PackageJson } from 'type-fest';
+import { ref, computed, watch } from 'vue';
 
 const props = defineProps<{
-	entryPoints: PackageEntryPoints;
-	parsedExports: ParsedExport[];
-	generatedFiles: string[];
-	hasWildcard: boolean;
-	error: string | null;
+	packageJson: PackageJson;
 }>();
 
-const entryPointCount = computed(() => Object.keys(props.entryPoints).length);
+const entryPoints = ref<PackageEntryPoints>({});
+const parsedExports = ref<ParsedExport[]>([]);
+const error = ref<string | null>(null);
+const generatedFiles = ref<string[]>([]);
+
+const extractFilesFromExports = (exports: any): Set<string> => {
+	const files = new Set<string>();
+
+	const extract = (value: any) => {
+		if (typeof value === 'string' && value.startsWith('./')) {
+			files.add(value);
+
+			if (value.includes('*')) {
+				const exampleNames = ['index', 'utils', 'helpers', 'config', 'types', 'api', 'core'];
+				for (const example of exampleNames) {
+					const exampleFile = value.replaceAll('*', example);
+					files.add(exampleFile);
+				}
+			}
+		} else if (Array.isArray(value)) {
+			for (const item of value) {
+				extract(item);
+			}
+		} else if (value && typeof value === 'object') {
+			for (const key in value) {
+				extract(value[key]);
+			}
+		}
+	};
+
+	extract(exports);
+	return files;
+};
+
+const analyzePackage = () => {
+	try {
+		console.log('═══════════════════════════════════════');
+		console.log('🔍 Starting package analysis');
+		console.log('📦 Analyzing exports:', props.packageJson.exports);
+
+		if (props.packageJson.exports) {
+			parsedExports.value = parsePackageExports(props.packageJson.exports);
+			console.log('📋 Parsed exports:', parsedExports.value);
+
+			const referencedFiles = extractFilesFromExports(props.packageJson.exports);
+			console.log('📄 Files extracted from exports:', Array.from(referencedFiles));
+
+			generatedFiles.value = Array.from(referencedFiles).sort();
+
+			entryPoints.value = analyzeExportsWithFiles(parsedExports.value, generatedFiles.value);
+			console.log('✨ Entry points found:', entryPoints.value);
+		} else {
+			parsedExports.value = [];
+			generatedFiles.value = [];
+			entryPoints.value = {};
+		}
+
+		console.log('═══════════════════════════════════════');
+
+		error.value = null;
+	} catch (error_) {
+		console.error('💥 Error during analysis:', error_);
+		error.value = error_ instanceof Error ? error_.message : String(error_);
+		entryPoints.value = {};
+		parsedExports.value = [];
+		generatedFiles.value = [];
+	}
+};
+
+watch(() => props.packageJson, analyzePackage, { immediate: true, deep: true });
+
+const entryPointCount = computed(() => Object.keys(entryPoints.value).length);
+
+const hasWildcard = computed(() => JSON.stringify(props.packageJson.exports || {}).includes('*'));
 
 const formatSubpath = (subpath: string | string[]): string => (Array.isArray(subpath) ? subpath.join('*') : subpath);
 

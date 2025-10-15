@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import {
-	parsePackageExports, analyzeExportsWithFiles, type PackageEntryPoints, type ParsedExport,
-} from 'pkg-entry-points';
+import { reactive, computed } from 'vue';
+import type { PackageJson } from 'type-fest';
 import MonacoEditor from './components/MonacoEditor.vue';
-import ResultsPanel from './components/Analysis.vue';
+import Analysis from './components/Analysis.vue';
 
 const examples = {
 	basic: {
@@ -37,101 +35,24 @@ const defaultPackageJson = {
 	},
 };
 
-const packageJsonContent = ref(JSON.stringify(defaultPackageJson, null, 2));
-const entryPoints = ref<PackageEntryPoints>({});
-const parsedExports = ref<ParsedExport[]>([]);
-const error = ref<string | null>(null);
-const generatedFiles = ref<string[]>([]);
+const packageJson = reactive<PackageJson>(defaultPackageJson);
 
-const extractFilesFromExports = (exports: any): Set<string> => {
-	const files = new Set<string>();
-
-	const extract = (value: any) => {
-		if (typeof value === 'string' && value.startsWith('./')) {
-			files.add(value);
-
-			if (value.includes('*')) {
-				const exampleNames = ['index', 'utils', 'helpers', 'config', 'types', 'api', 'core'];
-				for (const example of exampleNames) {
-					const exampleFile = value.replaceAll('*', example);
-					files.add(exampleFile);
-				}
-			}
-		} else if (Array.isArray(value)) {
-			for (const item of value) {
-				extract(item);
-			}
-		} else if (value && typeof value === 'object') {
-			for (const key in value) {
-				extract(value[key]);
-			}
+const packageJsonContent = computed({
+	get: () => JSON.stringify(packageJson, null, 2),
+	set: (value: string) => {
+		try {
+			const parsed = JSON.parse(value) as PackageJson;
+			Object.assign(packageJson, parsed);
+		} catch {
+			// Invalid JSON, ignore
 		}
-	};
-
-	extract(exports);
-	return files;
-};
-
-const analyzePackage = (content: string) => {
-	try {
-		console.log('═══════════════════════════════════════');
-		console.log('🔍 Starting package analysis');
-
-		const packageJson = JSON.parse(content);
-		console.log('📦 Analyzing exports:', packageJson.exports);
-
-		// Parse exports structure
-		if (packageJson.exports) {
-			parsedExports.value = parsePackageExports(packageJson.exports);
-			console.log('📋 Parsed exports:', parsedExports.value);
-
-			// Extract files from parsed exports
-			const referencedFiles = extractFilesFromExports(packageJson.exports);
-			console.log('📄 Files extracted from exports:', Array.from(referencedFiles));
-
-			generatedFiles.value = Array.from(referencedFiles).sort();
-
-			// Analyze exports with files to get final entry points
-			entryPoints.value = analyzeExportsWithFiles(parsedExports.value, generatedFiles.value);
-			console.log('✨ Entry points found:', entryPoints.value);
-		} else {
-			parsedExports.value = [];
-			generatedFiles.value = [];
-			entryPoints.value = {};
-		}
-
-		console.log('═══════════════════════════════════════');
-
-		error.value = null;
-	} catch (error_) {
-		console.error('💥 Error during analysis:', error_);
-		error.value = error_ instanceof Error ? error_.message : String(error_);
-		entryPoints.value = {};
-		parsedExports.value = [];
-		generatedFiles.value = [];
-	}
-};
-
-watch(packageJsonContent, (content) => {
-	analyzePackage(content);
+	},
 });
 
 const loadExample = (exampleKey: keyof typeof examples) => {
 	const example = examples[exampleKey];
-	packageJsonContent.value = JSON.stringify(example, null, 2);
+	Object.assign(packageJson, example);
 };
-
-const hasWildcard = computed(() => {
-	try {
-		const packageJson = JSON.parse(packageJsonContent.value);
-		return JSON.stringify(packageJson.exports || {}).includes('*');
-	} catch {
-		return false;
-	}
-});
-
-// Initial analysis
-analyzePackage(packageJsonContent.value);
 </script>
 
 <template>
@@ -178,13 +99,7 @@ analyzePackage(packageJsonContent.value);
 				<div class="bg-gray-800 text-white px-4 py-2 text-sm font-semibold">
 					Analysis Results
 				</div>
-				<ResultsPanel
-					:entry-points="entryPoints"
-					:parsed-exports="parsedExports"
-					:generated-files="generatedFiles"
-					:has-wildcard="hasWildcard"
-					:error="error"
-				/>
+				<Analysis :package-json="packageJson" />
 			</div>
 		</div>
 	</div>

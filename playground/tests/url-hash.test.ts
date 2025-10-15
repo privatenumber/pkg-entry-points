@@ -29,9 +29,9 @@ test('updates URL hash when content changes via example selection', async () => 
 	const initialDecoded = decodeURIComponent(atob(initialHash.slice(1)));
 	expect(initialDecoded).toContain('example-package');
 
-	// Select the "basic" example from dropdown to trigger content change
+	// Select the "wildcardDanger" example from dropdown to trigger content change
 	const selector = screen.getByLabelText(/examples/i);
-	await selector.selectOptions('basic');
+	await selector.selectOptions('wildcardDanger');
 
 	// Wait for hash to update
 	await sleep(100);
@@ -40,11 +40,10 @@ test('updates URL hash when content changes via example selection', async () => 
 	const updatedHash = globalThis.location.hash;
 	expect(updatedHash).not.toBe(initialHash);
 
-	// Decode and verify it contains the basic example content
+	// Decode and verify it contains the wildcardDanger example content
 	const decoded = decodeURIComponent(atob(updatedHash.slice(1)));
-	expect(decoded).toContain('"name": "example-package"');
-	expect(decoded).toContain('".": "./index.js"');
-	expect(decoded).toContain('"./utils": "./utils.js"');
+	expect(decoded).toContain('"name": "dangerous-wildcards"');
+	expect(decoded).toContain('"./*": "./dist/*.js"');
 
 	// This demonstrates that handleContentChange() -> updateUrl() works correctly
 	// The same code path is used when typing in the Monaco editor

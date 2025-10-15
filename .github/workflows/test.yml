@@ -42,5 +42,8 @@ jobs:
       - name: Playground type-check
         run: pnpm playground:type-check
 
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Playground test
         run: pnpm playground:test

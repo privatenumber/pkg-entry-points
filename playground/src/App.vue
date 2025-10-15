@@ -15,23 +15,22 @@ const examples = {
 	wildcardDanger: {
 		name: 'dangerous-wildcards',
 		exports: {
-			'./*': './src/*.js',
+			'./*': './dist/*.js',
 		},
 	},
 	wildcardSafe: {
 		name: 'safe-wildcards',
 		exports: {
-			'./features/*': './src/features/*/index.js',
+			'./features/*': './dist/features/*/index.js',
 		},
 	},
 };
 
 const defaultPackageJson = {
 	name: 'example-package',
-	version: '1.0.0',
 	exports: {
-		'./a': './src/a.js',
-		'./*': './src/*.js',
+		'./a': './dist/a.js',
+		'./*': './dist/*.js',
 	},
 };
 

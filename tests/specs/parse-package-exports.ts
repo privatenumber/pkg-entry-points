@@ -4,21 +4,22 @@ import { parsePackageExports } from '#pkg-entry-points';
 export default testSuite(({ describe }) => {
 	describe('parsePackageExports', ({ test }) => {
 		test('string export', () => {
-			const result = parsePackageExports('./index.js');
+			const { parsed, errors } = parsePackageExports('./index.js');
 
-			expect(result).toStrictEqual([
+			expect(parsed).toStrictEqual([
 				{
 					subpath: '.',
 					target: './index.js',
 					conditions: ['default'],
 				},
 			]);
+			expect(errors).toStrictEqual([]);
 		});
 
 		test('null export (creates block entry)', () => {
-			const result = parsePackageExports(null);
+			const { parsed, errors } = parsePackageExports(null);
 
-			expect(result).toStrictEqual([
+			expect(parsed).toStrictEqual([
 				{
 					subpath: '.',
 					target: null,
@@ -28,18 +29,18 @@ export default testSuite(({ describe }) => {
 		});
 
 		test('empty object', () => {
-			const result = parsePackageExports({});
+			const { parsed, errors } = parsePackageExports({});
 
-			expect(result).toStrictEqual([]);
+			expect(parsed).toStrictEqual([]);
 		});
 
 		test('conditions object', () => {
-			const result = parsePackageExports({
+			const { parsed, errors } = parsePackageExports({
 				import: './index.mjs',
 				require: './index.cjs',
 			});
 
-			expect(result).toStrictEqual([
+			expect(parsed).toStrictEqual([
 				{
 					subpath: '.',
 					target: './index.mjs',
@@ -54,7 +55,7 @@ export default testSuite(({ describe }) => {
 		});
 
 		test('nested conditions', () => {
-			const result = parsePackageExports({
+			const { parsed, errors } = parsePackageExports({
 				node: {
 					import: './node.mjs',
 					require: './node.cjs',
@@ -62,7 +63,7 @@ export default testSuite(({ describe }) => {
 				default: './index.js',
 			});
 
-			expect(result).toStrictEqual([
+			expect(parsed).toStrictEqual([
 				{
 					subpath: '.',
 					target: './node.mjs',
@@ -82,13 +83,13 @@ export default testSuite(({ describe }) => {
 		});
 
 		test('multiple subpaths', () => {
-			const result = parsePackageExports({
+			const { parsed, errors } = parsePackageExports({
 				'.': './index.js',
 				'./utils': './utils.js',
 				'./package.json': './package.json',
 			});
 
-			expect(result).toStrictEqual([
+			expect(parsed).toStrictEqual([
 				{
 					subpath: '.',
 					target: './index.js',
@@ -108,11 +109,11 @@ export default testSuite(({ describe }) => {
 		});
 
 		test('wildcard subpath', () => {
-			const result = parsePackageExports({
+			const { parsed, errors } = parsePackageExports({
 				'./components/*': './dist/components/*.js',
 			});
 
-			expect(result).toStrictEqual([
+			expect(parsed).toStrictEqual([
 				{
 					subpath: ['./components/', ''],
 					target: ['./dist/components/', '.js'],
@@ -122,11 +123,11 @@ export default testSuite(({ describe }) => {
 		});
 
 		test('multiple wildcards in target', () => {
-			const result = parsePackageExports({
+			const { parsed, errors } = parsePackageExports({
 				'./features/*': './dist/*/*/index.js',
 			});
 
-			expect(result).toStrictEqual([
+			expect(parsed).toStrictEqual([
 				{
 					subpath: ['./features/', ''],
 					target: ['./dist/', '/', '/index.js'],
@@ -135,20 +136,22 @@ export default testSuite(({ describe }) => {
 			]);
 		});
 
-		test('throws on multiple wildcards in subpath', () => {
-			expect(() => {
-				parsePackageExports({
-					'./*/*': './dist/index.js',
-				});
-			}).toThrow('Subpath pattern can contain at most one wildcard: ./*/*');
+		test('returns error on multiple wildcards in subpath', () => {
+			const { parsed, errors } = parsePackageExports({
+				'./*/*': './dist/index.js',
+			});
+
+			expect(parsed).toStrictEqual([]);
+			expect(errors).toHaveLength(1);
+			expect(errors[0].message).toBe('Subpath pattern can contain at most one wildcard: ./*/*');
 		});
 
 		test('fallback array', () => {
-			const result = parsePackageExports({
+			const { parsed, errors } = parsePackageExports({
 				'.': ['./modern.js', './fallback.js'],
 			});
 
-			expect(result).toStrictEqual([
+			expect(parsed).toStrictEqual([
 				{
 					subpath: '.',
 					target: './modern.js',
@@ -163,14 +166,14 @@ export default testSuite(({ describe }) => {
 		});
 
 		test('null in conditions object (creates block entry)', () => {
-			const result = parsePackageExports({
+			const { parsed, errors } = parsePackageExports({
 				'.': {
 					import: './index.mjs',
 					require: null,
 				},
 			});
 
-			expect(result).toStrictEqual([
+			expect(parsed).toStrictEqual([
 				{
 					subpath: '.',
 					target: './index.mjs',
@@ -185,7 +188,7 @@ export default testSuite(({ describe }) => {
 		});
 
 		test('complex exports with multiple features', () => {
-			const result = parsePackageExports({
+			const { parsed, errors } = parsePackageExports({
 				'.': {
 					import: './index.mjs',
 					require: './index.cjs',
@@ -198,7 +201,7 @@ export default testSuite(({ describe }) => {
 				'./private': null,
 			});
 
-			expect(result).toStrictEqual([
+			expect(parsed).toStrictEqual([
 				{
 					subpath: '.',
 					target: './index.mjs',
@@ -233,12 +236,12 @@ export default testSuite(({ describe }) => {
 		});
 
 		test('null blocks wildcard patterns', () => {
-			const result = parsePackageExports({
+			const { parsed, errors } = parsePackageExports({
 				'./dist/*': './dist/*',
 				'./dist/internal/*': null,
 			});
 
-			expect(result).toStrictEqual([
+			expect(parsed).toStrictEqual([
 				{
 					subpath: ['./dist/', ''],
 					target: ['./dist/', ''],
@@ -252,15 +255,15 @@ export default testSuite(({ describe }) => {
 			]);
 		});
 
-		test('ignores invalid subpath keys (not starting with ./)', () => {
-			const result = parsePackageExports({
+		test('returns errors for invalid subpath keys (not starting with .)', () => {
+			const { parsed, errors } = parsePackageExports({
 				'./a': './dist/a.js',
 				'./*': './dist/*.js',
 				notSubPath: './notSubPath',
 				'invalid-key': './invalid.js',
 			});
 
-			expect(result).toStrictEqual([
+			expect(parsed).toStrictEqual([
 				{
 					subpath: './a',
 					target: './dist/a.js',
@@ -272,6 +275,9 @@ export default testSuite(({ describe }) => {
 					conditions: ['default'],
 				},
 			]);
+			expect(errors).toHaveLength(2);
+			expect(errors[0].message).toBe('Invalid subpath "notSubPath": must start with "."');
+			expect(errors[1].message).toBe('Invalid subpath "invalid-key": must start with "."');
 		});
 	});
 });

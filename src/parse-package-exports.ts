@@ -1,5 +1,5 @@
 import type { PackageJson } from 'type-fest';
-import type { ParsedExport } from './types.js';
+import type { ParsedExport, ParseResult } from './types.js';
 import { STAR } from './utils/constants.js';
 
 type ParseContext = {
@@ -11,6 +11,7 @@ const traverseExports = (
 	exports: PackageJson.Exports,
 	context: ParseContext,
 	results: ParsedExport[],
+	errors: Error[],
 ): void => {
 	if (exports === null || typeof exports === 'string') {
 		const subpathHasStar = context.subpath.includes(STAR);
@@ -20,7 +21,8 @@ const traverseExports = (
 		if (subpathHasStar) {
 			subpathParts = context.subpath.split(STAR);
 			if (subpathParts.length > 2) {
-				throw new Error(`Subpath pattern can contain at most one wildcard: ${context.subpath}`);
+				errors.push(new Error(`Subpath pattern can contain at most one wildcard: ${context.subpath}`));
+				return;
 			}
 		}
 
@@ -44,7 +46,7 @@ const traverseExports = (
 
 	if (Array.isArray(exports)) {
 		for (const entry of exports) {
-			traverseExports(entry, context, results);
+			traverseExports(entry, context, results, errors);
 		}
 		return;
 	}
@@ -61,8 +63,9 @@ const traverseExports = (
 			// Multiple subpaths
 			for (const subpath of keys) {
 				if (Object.hasOwn(exports, subpath)) {
-					// Ignore keys that don't start with '.'
+					// Validate subpath starts with '.'
 					if (!subpath.startsWith('.')) {
+						errors.push(new Error(`Invalid subpath "${subpath}": must start with "."`));
 						continue;
 					}
 
@@ -73,6 +76,7 @@ const traverseExports = (
 							conditionsPath: [],
 						},
 						results,
+						errors,
 					);
 				}
 			}
@@ -90,6 +94,7 @@ const traverseExports = (
 							conditionsPath: newConditionsPath,
 						},
 						results,
+						errors,
 					);
 				}
 			}
@@ -99,8 +104,9 @@ const traverseExports = (
 
 export const parsePackageExports = (
 	exports: PackageJson.Exports,
-): ParsedExport[] => {
+): ParseResult => {
 	const results: ParsedExport[] = [];
+	const errors: Error[] = [];
 
 	traverseExports(
 		exports,
@@ -109,7 +115,11 @@ export const parsePackageExports = (
 			conditionsPath: [],
 		},
 		results,
+		errors,
 	);
 
-	return results;
+	return {
+		parsed: results,
+		errors,
+	};
 };

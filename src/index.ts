@@ -16,7 +16,7 @@ export const getPackageEntryPoints = async (
 	const packageFiles = await getAllFiles(fs, packagePath);
 
 	if (packageJson.exports !== undefined) {
-		const parsed = parsePackageExports(packageJson.exports);
+		const { parsed } = parsePackageExports(packageJson.exports);
 		return analyzeExportsWithFiles(parsed, packageFiles);
 	}
 
@@ -32,7 +32,7 @@ export const getPackageEntryPointsSync = (
 	const packageFiles = getAllFilesSync(fs, packagePath);
 
 	if (packageJson.exports !== undefined) {
-		const parsed = parsePackageExports(packageJson.exports);
+		const { parsed } = parsePackageExports(packageJson.exports);
 		return analyzeExportsWithFiles(parsed, packageFiles);
 	}
 
@@ -41,4 +41,4 @@ export const getPackageEntryPointsSync = (
 
 export { parsePackageExports } from './parse-package-exports.js';
 export { analyzeExportsWithFiles } from './analyze-exports-with-files.js';
-export type { ParsedExport, PackageEntryPoints } from './types.js';
+export type { ParsedExport, ParseResult, PackageEntryPoints } from './types.js';

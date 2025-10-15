@@ -15,3 +15,8 @@ export type ParsedExport = {
 	target: string | string[] | null;
 	conditions: string[];
 };
+
+export type ParseResult = {
+	parsed: ParsedExport[];
+	errors: Error[];
+};

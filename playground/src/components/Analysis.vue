@@ -4,6 +4,7 @@ import {
 	analyzeExportsWithFiles,
 	type PackageEntryPoints,
 	type ParsedExport,
+	type ParseResult,
 } from 'pkg-entry-points';
 import { ref, computed, watch } from 'vue';
 import type { PackageJsonWithName } from '../types.js';
@@ -53,7 +54,17 @@ const analyzePackage = () => {
 		analysisError.value = null;
 
 		if (props.packageJson.exports) {
-			parsedExports.value = parsePackageExports(props.packageJson.exports);
+			const { parsed, errors } = parsePackageExports(props.packageJson.exports);
+
+			if (errors.length > 0) {
+				analysisError.value = errors.map((error: Error) => error.message).join('\n');
+				parsedExports.value = [];
+				generatedFiles.value = [];
+				entryPoints.value = {};
+				return;
+			}
+
+			parsedExports.value = parsed;
 
 			const referencedFiles = extractFilesFromExports(props.packageJson.exports);
 			generatedFiles.value = Array.from(referencedFiles).sort();

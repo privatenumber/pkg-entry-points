@@ -7,13 +7,11 @@
 		"build": "tsc && vite build",
 		"preview": "vite preview"
 	},
-	"dependencies": {
-		"monaco-editor": "^0.54.0",
-		"pkg-entry-points": "link:.."
-	},
 	"devDependencies": {
 		"@tailwindcss/vite": "^4.1.14",
 		"@vitejs/plugin-vue": "^6.0.1",
+		"monaco-editor": "^0.54.0",
+		"pkg-entry-points": "link:..",
 		"tailwindcss": "^4.1.14",
 		"typescript": "^5.9.3",
 		"vite": "^7.1.9",

@@ -34,15 +34,15 @@ const defaultPackageJson = {
 	},
 };
 
-const packageJson = reactive<PackageJson>(defaultPackageJson);
+const packageJson = ref<PackageJson>(defaultPackageJson);
 const jsonError = ref<string | null>(null);
 
 const packageJsonContent = computed({
-	get: () => JSON.stringify(packageJson, null, 2),
+	get: () => JSON.stringify(packageJson.value, null, 2),
 	set: (value: string) => {
 		try {
 			const parsed = JSON.parse(value) as PackageJson;
-			Object.assign(packageJson, parsed);
+			packageJson.value = parsed;
 			jsonError.value = null;
 		} catch (error_) {
 			jsonError.value = error_ instanceof Error ? error_.message : String(error_);

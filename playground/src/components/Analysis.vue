@@ -58,10 +58,6 @@ const analyzePackage = () => {
 
 			if (errors.length > 0) {
 				analysisError.value = errors.map((error: Error) => error.message).join('\n');
-				parsedExports.value = [];
-				generatedFiles.value = [];
-				entryPoints.value = {};
-				return;
 			}
 
 			parsedExports.value = parsed;
@@ -103,13 +99,13 @@ const hasWildcard = computed(() => JSON.stringify(props.packageJson.exports || {
 
 		<div
 			v-if="analysisError"
-			class="bg-red-50 border border-red-200 rounded p-4 text-red-800"
+			class="bg-red-50 border border-red-200 rounded p-4 text-red-800 mb-4"
 		>
 			<strong>Analysis Error:</strong>
 			<pre class="mt-2 text-sm">{{ analysisError }}</pre>
 		</div>
 
-		<template v-else-if="!error">
+		<template v-if="!error">
 			<div
 				v-if="hasWildcard"
 				class="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4 text-yellow-800"

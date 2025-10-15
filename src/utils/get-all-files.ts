@@ -1,6 +1,8 @@
 import type _fs from 'fs';
 import path from 'path';
 
+const nodeModulesPath = `node_modules${path.sep}`;
+
 /**
  * Recursively list all files in a directory.
  *
@@ -18,16 +20,21 @@ export const getAllFiles = async (
 		withFileTypes: true,
 	});
 
-	return entries
-		.filter((entry) => {
-			if (!entry.isFile()) {
-				return false;
-			}
+	const result: string[] = [];
+	for (const entry of entries) {
+		if (!entry.isFile()) {
+			continue;
+		}
 
-			const relativePath = path.relative(directoryPath, entry.parentPath);
-			return !relativePath.split(path.sep).includes('node_modules');
-		})
-		.map(entry => `./${path.join(path.relative(directoryPath, entry.parentPath), entry.name)}`);
+		const relativeParentPath = path.relative(directoryPath, entry.parentPath);
+		if (relativeParentPath.startsWith(nodeModulesPath)) {
+			continue;
+		}
+
+		result.push(`./${path.join(relativeParentPath, entry.name)}`);
+	}
+
+	return result;
 };
 
 /**
@@ -47,14 +54,19 @@ export const getAllFilesSync = (
 		withFileTypes: true,
 	});
 
-	return entries
-		.filter((entry) => {
-			if (!entry.isFile()) {
-				return false;
-			}
+	const result: string[] = [];
+	for (const entry of entries) {
+		if (!entry.isFile()) {
+			continue;
+		}
 
-			const relativePath = path.relative(directoryPath, entry.parentPath);
-			return !relativePath.split(path.sep).includes('node_modules');
-		})
-		.map(entry => `./${path.join(path.relative(directoryPath, entry.parentPath), entry.name)}`);
+		const relativeParentPath = path.relative(directoryPath, entry.parentPath);
+		if (relativeParentPath.startsWith(nodeModulesPath)) {
+			continue;
+		}
+
+		result.push(`./${path.join(relativeParentPath, entry.name)}`);
+	}
+
+	return result;
 };

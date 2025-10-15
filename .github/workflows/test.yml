@@ -27,14 +27,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Build
+        run: pnpm build
+
       - name: Type Check
         run: pnpm type-check
 
       - name: Lint
         run: pnpm lint
 
-      - name: Build
-        run: pnpm build
-
       - name: Test
         run: pnpm test
+
+      - name: Playground type-check
+        run: pnpm playground:type-check
+
+      - name: Install Playwright browsers
+        run: cd playground; pnpm playwright install --with-deps chromium
+
+      - name: Playground test
+        run: pnpm playground:test

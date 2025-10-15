@@ -2,195 +2,10 @@ import _fs from 'fs';
 import path from 'path';
 import type { PackageJson } from 'type-fest';
 import { getAllFiles, getAllFilesSync } from './utils/get-all-files.js';
-import { createPathMatcher, pathMatches, type PathMatcher } from './utils/path-matcher.js';
-import { STAR } from './utils/constants.js';
 import { resolveLegacyEntries } from './resolve-legacy-entries.js';
-import type {
-	ConditionsMap, PackageEntryPoints, StarMatch, ConditionToPath,
-} from './types.js';
-
-type GetConditions = {
-	(
-		packageFiles: string[],
-		exports: PackageJson.Exports,
-	): ConditionsMap;
-	(
-		packageFiles: string[],
-		exports: PackageJson.Exports,
-		conditionsPath: string[],
-		conditions: ConditionsMap,
-	): ConditionsMap | string;
-};
-
-const getConditions: GetConditions = (
-	packageFiles: string[],
-	exports: PackageJson.Exports,
-	conditionsPath: string[] = [],
-	conditions: ConditionsMap = {},
-) => {
-	if (
-		exports === null
-		|| typeof exports === 'string'
-	) {
-		if (conditionsPath.length === 0) {
-			conditionsPath.push('default');
-		}
-
-		const conditionsKey = JSON.stringify(conditionsPath);
-		if (!Object.hasOwn(conditions, conditionsKey)) {
-			if (exports === null) {
-				conditions[conditionsKey] = exports;
-			} else if (exports.includes(STAR)) {
-				const pathMatcher = createPathMatcher(exports);
-				conditions[conditionsKey] = packageFiles
-					.map((filePath) => {
-						const starValue = pathMatches(pathMatcher, filePath);
-						return starValue !== undefined && [filePath, starValue];
-					})
-					.filter((starExport): starExport is StarMatch => starExport !== false);
-			} else if (packageFiles.includes(exports)) {
-				conditions[conditionsKey] = [exports];
-			}
-		}
-	} else if (Array.isArray(exports)) {
-		for (const ex of exports) {
-			getConditions(
-				packageFiles,
-				ex,
-				conditionsPath,
-				conditions,
-			);
-		}
-	} else if (typeof exports === 'object' && exports) {
-		for (const condition in exports) {
-			if (!Object.hasOwn(exports, condition)) {
-				continue;
-			}
-
-			const newConditions = conditionsPath.slice();
-			if (!newConditions.includes(condition)) {
-				newConditions.push(condition);
-			}
-
-			getConditions(
-				packageFiles,
-				exports[condition]!,
-				newConditions.sort(),
-				conditions,
-			);
-		}
-	}
-
-	return conditions;
-};
-
-const analyzeExportsWithFiles = (
-	exports: PackageJson.Exports,
-	packageFiles: string[],
-): PackageEntryPoints => {
-	if (exports === null) {
-		return {};
-	}
-
-	let keys = Object.keys(exports);
-	if (keys.length === 0) {
-		return {};
-	}
-
-	const isPathsObject = keys[0][0] === '.';
-	if (!isPathsObject) {
-		exports = { '.': exports };
-		keys = ['.'];
-	}
-
-	const subpathConditions: {
-		[subpath: string]: {
-			[conditions: string]: string;
-		};
-	} = {};
-
-	const blocks: [
-		subpath: string | PathMatcher,
-		condition: string,
-	][] = [];
-
-	for (const rawSubpath of keys) {
-		const conditions = getConditions(
-			packageFiles,
-			(exports as PackageJson.ExportConditions)[rawSubpath]!,
-		);
-
-		const subpathStar = rawSubpath.includes(STAR);
-		for (const condition in conditions) {
-			if (!Object.hasOwn(conditions, condition)) {
-				continue;
-			}
-
-			const internalPaths = conditions[condition];
-			if (internalPaths) {
-				for (let internalPath of internalPaths) {
-					let subpath = rawSubpath;
-					if (subpathStar) {
-						const hasStar = Array.isArray(internalPath);
-						subpath = rawSubpath.split(STAR).join(
-							hasStar
-								? internalPath[1]
-								: '_',
-						);
-
-						if (hasStar) {
-							internalPath = (internalPath as StarMatch)[0];
-						}
-					}
-
-					if (!subpathConditions[subpath]) {
-						subpathConditions[subpath] = {};
-					}
-
-					subpathConditions[subpath][condition] = (
-						Array.isArray(internalPath)
-							? internalPath[0]
-							: internalPath
-					);
-				}
-			} else {
-				blocks.push([
-					subpathStar ? createPathMatcher(rawSubpath) : rawSubpath,
-					condition,
-				]);
-			}
-		}
-	}
-
-	const unblockedExports: PackageEntryPoints = {};
-	for (const subpath in subpathConditions) {
-		if (!Object.hasOwn(subpathConditions, subpath)) {
-			continue;
-		}
-
-		const conditionsEntries = Object.entries(subpathConditions[subpath])
-			.filter(
-				([conditions]) => !blocks.some(
-					([blockPath, blockCondition]) => (
-						(
-							typeof blockPath === 'string'
-								? blockPath === subpath
-								: pathMatches(blockPath, subpath)
-						)
-						&& conditions === blockCondition
-					),
-				),
-			)
-			.map(([conditions, internalPath]): ConditionToPath => [JSON.parse(conditions), internalPath])
-			.sort(([conditionsA], [conditionsB]) => conditionsA.length - conditionsB.length);
-
-		if (conditionsEntries.length > 0) {
-			unblockedExports[subpath] = conditionsEntries;
-		}
-	}
-
-	return unblockedExports;
-};
+import { parsePackageExports } from './parse-package-exports.js';
+import { analyzeExportsWithFiles } from './analyze-exports-with-files.js';
+import type { PackageEntryPoints } from './types.js';
 
 export const getPackageEntryPoints = async (
 	packagePath: string,
@@ -201,7 +16,8 @@ export const getPackageEntryPoints = async (
 	const packageFiles = await getAllFiles(fs, packagePath);
 
 	if (packageJson.exports !== undefined) {
-		return analyzeExportsWithFiles(packageJson.exports, packageFiles);
+		const { parsed } = parsePackageExports(packageJson.exports);
+		return analyzeExportsWithFiles(parsed, packageFiles);
 	}
 
 	return resolveLegacyEntries(packageJson, packageFiles);
@@ -216,8 +32,13 @@ export const getPackageEntryPointsSync = (
 	const packageFiles = getAllFilesSync(fs, packagePath);
 
 	if (packageJson.exports !== undefined) {
-		return analyzeExportsWithFiles(packageJson.exports, packageFiles);
+		const { parsed } = parsePackageExports(packageJson.exports);
+		return analyzeExportsWithFiles(parsed, packageFiles);
 	}
 
 	return resolveLegacyEntries(packageJson, packageFiles);
 };
+
+export { parsePackageExports } from './parse-package-exports.js';
+export { analyzeExportsWithFiles } from './analyze-exports-with-files.js';
+export type { ParsedExport, ParseResult, PackageEntryPoints } from './types.js';

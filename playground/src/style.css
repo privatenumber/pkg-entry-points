@@ -1,0 +1,118 @@
+@import 'tailwindcss';
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Output panel styles */
+.warning {
+	background-color: #fef3c7;
+	border: 2px solid #f59e0b;
+	border-radius: 0.5rem;
+	padding: 1rem;
+	margin-bottom: 1.5rem;
+	color: #92400e;
+}
+
+.warning strong {
+	display: block;
+	font-size: 1.125rem;
+	margin-bottom: 0.5rem;
+}
+
+.warning p {
+	margin: 0.5rem 0 0;
+}
+
+.error {
+	background-color: #fee;
+	border: 2px solid #f00;
+	border-radius: 0.5rem;
+	padding: 1rem;
+	color: #900;
+}
+
+.error pre {
+	margin: 0.5rem 0 0;
+	white-space: pre-wrap;
+	font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+	font-size: 0.875rem;
+}
+
+.section {
+	margin-bottom: 2rem;
+}
+
+.section h3 {
+	font-size: 1.25rem;
+	font-weight: 600;
+	margin-bottom: 1rem;
+	color: #1f2937;
+}
+
+.file-list,
+.entry-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.file-list li {
+	padding: 0.5rem;
+	border-bottom: 1px solid #e5e7eb;
+}
+
+.file-list li:last-child {
+	border-bottom: none;
+}
+
+.file-list code {
+	font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+	font-size: 0.875rem;
+	color: #3730a3;
+}
+
+.entry-list > li {
+	margin-bottom: 1rem;
+	padding: 0.75rem;
+	background-color: #f9fafb;
+	border-radius: 0.375rem;
+	border-left: 3px solid #6366f1;
+}
+
+.entry-list > li strong {
+	display: block;
+	margin-bottom: 0.5rem;
+	color: #1f2937;
+	font-size: 1rem;
+}
+
+.entry-list ul {
+	list-style: none;
+	padding-left: 1rem;
+	margin: 0.5rem 0 0;
+}
+
+.entry-list ul li {
+	padding: 0.25rem 0;
+	font-size: 0.875rem;
+	color: #4b5563;
+}
+
+.entry-list code {
+	font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+	background-color: #e5e7eb;
+	padding: 0.125rem 0.375rem;
+	border-radius: 0.25rem;
+	font-size: 0.8125rem;
+}
+
+.empty {
+	color: #9ca3af;
+	font-style: italic;
+}

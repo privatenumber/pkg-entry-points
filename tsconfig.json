@@ -9,4 +9,7 @@
 		"esModuleInterop": true,
 		"isolatedModules": true,
 	},
+	"exclude": [
+		"playground",
+	],
 }

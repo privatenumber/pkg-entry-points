@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"target": "esnext",
+		"jsx": "preserve",
+		"moduleDetection": "force",
+		"useDefineForClassFields": true,
+		"module": "preserve",
+		"types": [
+			"vite/client",
+		],
+		"strict": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noEmit": true,
+		"verbatimModuleSyntax": true,
+		"skipLibCheck": true,
+		"noUncheckedSideEffectImports": true,
+	},
+}

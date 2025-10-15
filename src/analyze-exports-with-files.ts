@@ -9,206 +9,114 @@ export const analyzeExportsWithFiles = (
 ): PackageEntryPoints => {
 	const parsed = parsePackageExports(exports);
 
-	// Separate wildcard and static entries
-	// Static entries override wildcard entries for the same subpath+conditions
-	const wildcardEntries: {
-		[subpath: string]: {
-			[conditions: string]: string | null;
-		};
-	} = {};
-
-	const staticEntries: {
-		[subpath: string]: {
-			[conditions: string]: string | null;
-		};
-	} = {};
-
-	// Track wildcard blocks separately to apply later
-	const wildcardBlocks: Array<{
-		subpath: string[];
-		conditions: string;
-	}> = [];
+	// Build map of subpath -> conditions -> file path
+	// Track whether each entry came from a wildcard or static subpath
+	const entries = new Map<string, Map<string, { path: string | null; isWildcard: boolean }>>();
+	const wildcardBlocks: Array<{ subpath: string[]; conditions: string }> = [];
 
 	for (const entry of parsed) {
-		const isWildcardSubpath = Array.isArray(entry.subpath);
+		const isWildcard = Array.isArray(entry.subpath);
 		const conditionsKey = JSON.stringify(entry.conditions);
 
-		// Handle null targets (blocks)
+		// Handle null targets - track wildcard blocks, store static blocks
 		if (entry.target === null) {
-			if (isWildcardSubpath) {
-				// Wildcard block - track for later application
-				wildcardBlocks.push({
-					subpath: entry.subpath,
-					conditions: conditionsKey,
-				});
-				continue;
+			if (isWildcard) {
+				wildcardBlocks.push({ subpath: entry.subpath, conditions: conditionsKey });
 			} else {
-				// Static block
-				if (!staticEntries[entry.subpath]) {
-					staticEntries[entry.subpath] = {};
-				}
-
-				// Only set if not already present (first wins within static)
-				if (!Object.hasOwn(staticEntries[entry.subpath], conditionsKey)) {
-					staticEntries[entry.subpath][conditionsKey] = null;
+				const subpathMap = entries.get(entry.subpath) ?? new Map();
+				const existing = subpathMap.get(conditionsKey);
+				// Static null overrides wildcard entries
+				if (!existing || existing.isWildcard) {
+					subpathMap.set(conditionsKey, { path: null, isWildcard: false });
+					entries.set(entry.subpath, subpathMap);
 				}
 			}
 			continue;
 		}
 
-		if (isWildcardSubpath) {
-			// Wildcard pattern - match against files
-			const subpathPattern = entry.subpath.join('*');
-			const targetPattern = Array.isArray(entry.target)
-				? entry.target.join('*')
-				: entry.target;
+		// Expand wildcards or validate static paths
+		const filesToAdd: Array<{ subpath: string; file: string; isWildcard: boolean }> = [];
 
+		if (isWildcard) {
+			const targetPattern = Array.isArray(entry.target) ? entry.target.join('*') : entry.target;
 			const targetMatcher = createPathMatcher(targetPattern);
 
-			// If target is static (no wildcard), use '_' as the replacement value
-			const isTargetStatic = !Array.isArray(entry.target);
-
-			if (isTargetStatic) {
-				// Static target - check if file exists and use '_' for wildcard
-				if (packageFiles.includes(entry.target as string)) {
-					const subpath = entry.subpath.join('_');
-
-					if (!wildcardEntries[subpath]) {
-						wildcardEntries[subpath] = {};
-					}
-
-					// Only set if not already present (first wins within wildcards)
-					if (!Object.hasOwn(wildcardEntries[subpath], conditionsKey)) {
-						wildcardEntries[subpath][conditionsKey] = entry.target as string;
+			if (Array.isArray(entry.target)) {
+				// Dynamic target - match files
+				for (const file of packageFiles) {
+					const match = pathMatches(targetMatcher, file);
+					if (match !== undefined) {
+						filesToAdd.push({
+							subpath: entry.subpath.join(match),
+							file,
+							isWildcard: true,
+						});
 					}
 				}
 			} else {
-				// Dynamic target - match against files
-				for (const filePath of packageFiles) {
-					const targetMatch = pathMatches(targetMatcher, filePath);
-					if (targetMatch !== undefined) {
-						// Reconstruct subpath with the matched value
-						const subpath = entry.subpath.join(targetMatch);
-
-						if (!wildcardEntries[subpath]) {
-							wildcardEntries[subpath] = {};
-						}
-
-						// Only set if not already present (first wins within wildcards)
-						if (!Object.hasOwn(wildcardEntries[subpath], conditionsKey)) {
-							wildcardEntries[subpath][conditionsKey] = filePath;
-						}
-					}
+				// Static target with wildcard subpath - use '_'
+				if (packageFiles.includes(entry.target)) {
+					filesToAdd.push({
+						subpath: entry.subpath.join('_'),
+						file: entry.target,
+						isWildcard: true,
+					});
 				}
 			}
 		} else {
 			// Static subpath
 			if (Array.isArray(entry.target)) {
-				// Target has wildcard (e.g., '.': './file-*.js')
-				// Try to match target pattern against files
-				const targetPattern = entry.target.join('*');
-				const targetMatcher = createPathMatcher(targetPattern);
-
-				for (const filePath of packageFiles) {
-					const targetMatch = pathMatches(targetMatcher, filePath);
-					if (targetMatch !== undefined) {
-						// Found a matching file
-						if (!staticEntries[entry.subpath]) {
-							staticEntries[entry.subpath] = {};
-						}
-
-						// Only set if not already present (first wins within static)
-						if (!Object.hasOwn(staticEntries[entry.subpath], conditionsKey)) {
-							staticEntries[entry.subpath][conditionsKey] = filePath;
-						}
-						// For static subpath, only take the first match
+				// Target has wildcard - find first matching file
+				const targetMatcher = createPathMatcher(entry.target.join('*'));
+				for (const file of packageFiles) {
+					if (pathMatches(targetMatcher, file) !== undefined) {
+						filesToAdd.push({ subpath: entry.subpath, file, isWildcard: false });
 						break;
 					}
 				}
 			} else {
-				// Static target - check file existence
+				// Both static
 				if (packageFiles.includes(entry.target)) {
-					if (!staticEntries[entry.subpath]) {
-						staticEntries[entry.subpath] = {};
-					}
-
-					// Only set if not already present (first wins within static)
-					if (!Object.hasOwn(staticEntries[entry.subpath], conditionsKey)) {
-						staticEntries[entry.subpath][conditionsKey] = entry.target;
-					}
+					filesToAdd.push({ subpath: entry.subpath, file: entry.target, isWildcard: false });
 				}
 			}
 		}
-	}
 
-	// Merge: start with wildcard entries, then override with static entries
-	const merged: {
-		[subpath: string]: {
-			[conditions: string]: string | null;
-		};
-	} = {};
+		// Add files with precedence: static always wins over wildcard
+		for (const { subpath, file, isWildcard: fromWildcard } of filesToAdd) {
+			const subpathMap = entries.get(subpath) ?? new Map();
+			const existing = subpathMap.get(conditionsKey);
 
-	// Add all wildcard entries
-	for (const subpath in wildcardEntries) {
-		if (!Object.hasOwn(wildcardEntries, subpath)) {
-			continue;
-		}
-		merged[subpath] = { ...wildcardEntries[subpath] };
-	}
-
-	// Override with static entries
-	for (const subpath in staticEntries) {
-		if (!Object.hasOwn(staticEntries, subpath)) {
-			continue;
-		}
-
-		if (!merged[subpath]) {
-			merged[subpath] = {};
-		}
-
-		// Static entries override wildcard entries
-		for (const conditionsKey in staticEntries[subpath]) {
-			if (!Object.hasOwn(staticEntries[subpath], conditionsKey)) {
-				continue;
+			// Static overrides wildcard; otherwise first wins
+			if (!existing || (existing.isWildcard && !fromWildcard)) {
+				subpathMap.set(conditionsKey, { path: file, isWildcard: fromWildcard });
+				entries.set(subpath, subpathMap);
 			}
-			merged[subpath][conditionsKey] = staticEntries[subpath][conditionsKey];
 		}
 	}
 
-	// Filter out null entries (blocks) and apply wildcard blocks
+	// Build final result, filtering nulls and wildcard blocks
 	const result: PackageEntryPoints = {};
 
-	for (const subpath in merged) {
-		if (!Object.hasOwn(merged, subpath)) {
-			continue;
-		}
+	for (const [subpath, conditionsMap] of entries) {
+		const conditions = Array.from(conditionsMap.entries())
+			.filter(([conditionsKey, { path }]) => {
+				if (path === null) return false;
 
-		const conditionsEntries = Object.entries(merged[subpath])
-			// Filter out null entries and wildcard blocks
-			.filter(([conditionsKey, internalPath]) => {
-				// Filter out static nulls
-				if (internalPath === null) {
-					return false;
-				}
-
-				// Check if this is blocked by a wildcard block
+				// Check wildcard blocks
 				for (const block of wildcardBlocks) {
-					const blockMatcher = createPathMatcher(block.subpath.join('*'));
-					if (pathMatches(blockMatcher, subpath) !== undefined && conditionsKey === block.conditions) {
+					const matcher = createPathMatcher(block.subpath.join('*'));
+					if (pathMatches(matcher, subpath) !== undefined && conditionsKey === block.conditions) {
 						return false;
 					}
 				}
-
 				return true;
 			})
-			.map(([conditionsKey, internalPath]) => [
-				JSON.parse(conditionsKey) as string[],
-				internalPath as string,
-			] as [string[], string])
-			.sort(([conditionsA], [conditionsB]) => conditionsA.length - conditionsB.length);
+			.map(([conditionsKey, { path }]) => [JSON.parse(conditionsKey), path!] as [string[], string])
+			.sort(([a], [b]) => a.length - b.length);
 
-		if (conditionsEntries.length > 0) {
-			result[subpath] = conditionsEntries;
+		if (conditions.length > 0) {
+			result[subpath] = conditions;
 		}
 	}
 

@@ -14,20 +14,30 @@ const traverseExports = (
 ): void => {
 	if (exports === null || typeof exports === 'string') {
 		const subpathHasStar = context.subpath.includes(STAR);
+		let subpathParts: string[] | undefined;
 
 		// Validate subpath wildcard count
-		if (subpathHasStar && context.subpath.split(STAR).length > 2) {
-			throw new Error(`Subpath pattern can contain at most one wildcard: ${context.subpath}`);
+		if (subpathHasStar) {
+			subpathParts = context.subpath.split(STAR);
+			if (subpathParts.length > 2) {
+				throw new Error(`Subpath pattern can contain at most one wildcard: ${context.subpath}`);
+			}
 		}
 
 		results.push({
-			subpath: subpathHasStar ? context.subpath.split(STAR) : context.subpath,
+			subpath: subpathParts ?? context.subpath,
 			target: exports === null
 				? null
-				: (exports.includes(STAR)
-					? exports.split(STAR)
-					: exports),
-			conditions: context.conditionsPath.length > 0 ? context.conditionsPath : ['default'],
+				: (
+					exports.includes(STAR)
+						? exports.split(STAR)
+						: exports
+				),
+			conditions: (
+				context.conditionsPath.length > 0
+					? context.conditionsPath
+					: ['default']
+			),
 		});
 		return;
 	}

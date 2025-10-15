@@ -84,7 +84,62 @@ watch(() => props.packageJson, analyzePackage, { immediate: true, deep: true });
 
 const entryPointCount = computed(() => Object.keys(entryPoints.value).length);
 
-const hasWildcard = computed(() => JSON.stringify(props.packageJson.exports || {}).includes('*'));
+// Group entry points by their export pattern
+const groupedEntryPoints = computed(() => {
+	const groups: Array<{
+		exportPattern: string;
+		exportValue: any;
+		isWildcard: boolean;
+		entries: Array<{ subpath: string; internalPath: string }>;
+	}> = [];
+
+	// Build a map of which subpaths came from which export patterns
+	for (const [subpath, conditions] of Object.entries(entryPoints.value)) {
+		for (const [_conditionList, internalPath] of conditions) {
+			// Find the matching export pattern
+			let exportPattern = '.';
+			let exportValue: any = props.packageJson.exports;
+
+			if (props.packageJson.exports && typeof props.packageJson.exports === 'object') {
+				// Try exact match first
+				if (subpath in props.packageJson.exports) {
+					exportPattern = subpath;
+					exportValue = (props.packageJson.exports as any)[subpath];
+				} else {
+					// Try wildcard match
+					for (const [key, value] of Object.entries(props.packageJson.exports)) {
+						if (key.includes('*')) {
+							const pattern = key.replace('*', '(.*)');
+							const regex = new RegExp(`^${pattern}$`);
+							if (regex.test(subpath)) {
+								exportPattern = key;
+								exportValue = value;
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			const isWildcard = exportPattern.includes('*');
+
+			let group = groups.find(g => g.exportPattern === exportPattern);
+			if (!group) {
+				group = {
+					exportPattern,
+					exportValue,
+					isWildcard,
+					entries: [],
+				};
+				groups.push(group);
+			}
+
+			group.entries.push({ subpath, internalPath });
+		}
+	}
+
+	return groups;
+});
 </script>
 
 <template>
@@ -107,42 +162,53 @@ const hasWildcard = computed(() => JSON.stringify(props.packageJson.exports || {
 
 		<template v-if="!error">
 			<div
-				v-if="hasWildcard"
-				class="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4 text-yellow-800"
-			>
-				⚠️ <strong>Wildcard Detected!</strong>
-				<p class="text-sm mt-1">
-					Using wildcards (<code>*</code>) in exports can expose internal files unintentionally.
-				</p>
-			</div>
-
-			<div
 				v-if="entryPointCount === 0"
 				class="text-gray-500 italic"
 			>
 				No entry points exposed
 			</div>
 
-			<ul
+			<div
 				v-else
-				class="space-y-2"
+				class="space-y-6"
 			>
-				<li
-					v-for="([subpath, conditions], index) in Object.entries(entryPoints)"
+				<div
+					v-for="(group, index) in groupedEntryPoints"
 					:key="index"
-					class="font-mono text-sm"
 				>
-					<div
-						v-for="([_conditionList, internalPath], idx) in conditions"
-						:key="idx"
-						class="py-1"
-					>
-						<span class="text-blue-600">import '{{ props.packageJson.name }}{{ subpath.slice(1) }}'</span>
-						<span class="text-gray-400 mx-2">→</span>
-						<span class="text-green-600">{{ props.packageJson.name }}/{{ internalPath.slice(2) }}</span>
+					<!-- Export pattern header -->
+					<div class="mb-2">
+						<div class="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">
+							Export Pattern
+						</div>
+						<div class="font-mono text-sm bg-gray-100 rounded px-3 py-2 border border-gray-300">
+							<span class="text-gray-600">"{{ group.exportPattern }}":</span>
+							<span class="text-gray-800 ml-2">{{ JSON.stringify(group.exportValue) }}</span>
+						</div>
 					</div>
-				</li>
-			</ul>
+
+					<!-- Wildcard warning inline -->
+					<div
+						v-if="group.isWildcard"
+						class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-3 text-yellow-800 text-sm"
+					>
+						<span class="font-semibold">⚠️ Wildcard pattern</span> can expose internal files unintentionally
+					</div>
+
+					<!-- Entry points for this pattern -->
+					<ul class="space-y-1 ml-4">
+						<li
+							v-for="(entry, idx) in group.entries"
+							:key="idx"
+							class="font-mono text-sm py-1"
+						>
+							<span class="text-blue-600">import '{{ props.packageJson.name }}{{ entry.subpath.slice(1) }}'</span>
+							<span class="text-gray-400 mx-2">→</span>
+							<span class="text-green-600">{{ props.packageJson.name }}/{{ entry.internalPath.slice(2) }}</span>
+						</li>
+					</ul>
+				</div>
+			</div>
 		</template>
 	</div>
 </template>

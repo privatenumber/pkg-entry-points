@@ -35,12 +35,9 @@ const defaultPackageJson = {
 	},
 };
 
-const encodeToUrl = (content: string): string => {
-	return btoa(encodeURIComponent(content));
-};
-
-const decodeFromUrl = (encoded: string): string => {
-	return decodeURIComponent(atob(encoded));
+const updateUrl = (content: string) => {
+	const encoded = btoa(encodeURIComponent(content));
+	window.history.replaceState({}, '', `#${encoded}`);
 };
 
 const getInitialContent = (): string => {
@@ -48,17 +45,16 @@ const getInitialContent = (): string => {
 
 	if (hash) {
 		try {
-			return decodeFromUrl(hash);
+			return decodeURIComponent(atob(hash));
 		} catch {
 			// Invalid base64, use default
 		}
 	}
 
-	return JSON.stringify(defaultPackageJson, null, 2);
+	const defaultContent = JSON.stringify(defaultPackageJson, null, 2);
+	updateUrl(defaultContent);
+	return defaultContent;
 };
-
-const initialContent = getInitialContent();
-let initialPackageJson: PackageJsonWithName;
 
 const parsePackageJson = (content: string): PackageJsonWithName => {
 	const parsed = JSON.parse(content) as PackageJson;
@@ -70,6 +66,9 @@ const parsePackageJson = (content: string): PackageJsonWithName => {
 	return parsed as PackageJsonWithName;
 };
 
+const initialContent = getInitialContent();
+let initialPackageJson: PackageJsonWithName;
+
 try {
 	initialPackageJson = parsePackageJson(initialContent);
 } catch {
@@ -79,16 +78,6 @@ try {
 const packageJson = ref<PackageJsonWithName>(initialPackageJson);
 const monacoString = ref(initialContent);
 const jsonError = ref<string | null>(null);
-
-const updateUrl = (content: string) => {
-	const encoded = encodeToUrl(content);
-	window.history.replaceState({}, '', `#${encoded}`);
-};
-
-// Set initial URL hash if not present
-if (!window.location.hash) {
-	updateUrl(initialContent);
-}
 
 const handleContentChange = (value: string) => {
 	updateUrl(value);

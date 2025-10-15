@@ -120,8 +120,10 @@ export const analyzeExportsWithFiles = (
 	const result: PackageEntryPoints = {};
 
 	for (const [subpath, conditionsMap] of Array.from(entries)) {
-		type ConditionEntry = [string, { path: string | null;
-			isWildcard: boolean; }];
+		type ConditionEntry = [string, {
+			path: string | null;
+			isWildcard: boolean;
+		}];
 
 		type ConditionTuple = [string[], string];
 

@@ -136,7 +136,7 @@ analyzePackage(packageJsonContent.value);
 <template>
 	<div class="h-screen overflow-hidden flex flex-col">
 		<header class="bg-gray-900 text-white p-4 flex items-center justify-between">
-			<h1 class="text-2xl font-bold">pkg-entry-points Playground</h1>
+			<h1 class="text-2xl font-bold">package.json Exports Playground</h1>
 			<div class="flex items-center gap-4">
 				<label for="example-selector" class="text-sm">Examples:</label>
 				<select

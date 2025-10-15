@@ -1,3 +1,4 @@
+import { setTimeout } from 'node:timers/promises';
 import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-vue';
 import App from '../src/App.vue';
@@ -30,7 +31,7 @@ test('updates URL hash when content changes via example selection', async () => 
 	await selector.selectOptions('basic');
 
 	// Wait for hash to update
-	await new Promise(resolve => setTimeout(resolve, 100));
+	await setTimeout(100);
 
 	// Verify URL hash changed
 	const updatedHash = globalThis.location.hash;

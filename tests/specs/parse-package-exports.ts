@@ -26,12 +26,14 @@ export default testSuite(({ describe }) => {
 					conditions: ['default'],
 				},
 			]);
+			expect(errors).toStrictEqual([]);
 		});
 
 		test('empty object', () => {
 			const { parsed, errors } = parsePackageExports({});
 
 			expect(parsed).toStrictEqual([]);
+			expect(errors).toStrictEqual([]);
 		});
 
 		test('conditions object', () => {
@@ -52,6 +54,7 @@ export default testSuite(({ describe }) => {
 					conditions: ['require'],
 				},
 			]);
+			expect(errors).toStrictEqual([]);
 		});
 
 		test('nested conditions', () => {
@@ -80,6 +83,7 @@ export default testSuite(({ describe }) => {
 					conditions: ['default'],
 				},
 			]);
+			expect(errors).toStrictEqual([]);
 		});
 
 		test('multiple subpaths', () => {
@@ -106,6 +110,7 @@ export default testSuite(({ describe }) => {
 					conditions: ['default'],
 				},
 			]);
+			expect(errors).toStrictEqual([]);
 		});
 
 		test('wildcard subpath', () => {
@@ -120,6 +125,7 @@ export default testSuite(({ describe }) => {
 					conditions: ['default'],
 				},
 			]);
+			expect(errors).toStrictEqual([]);
 		});
 
 		test('multiple wildcards in target', () => {
@@ -134,6 +140,7 @@ export default testSuite(({ describe }) => {
 					conditions: ['default'],
 				},
 			]);
+			expect(errors).toStrictEqual([]);
 		});
 
 		test('returns error on multiple wildcards in subpath', () => {
@@ -163,6 +170,7 @@ export default testSuite(({ describe }) => {
 					conditions: ['default'],
 				},
 			]);
+			expect(errors).toStrictEqual([]);
 		});
 
 		test('null in conditions object (creates block entry)', () => {
@@ -185,6 +193,7 @@ export default testSuite(({ describe }) => {
 					conditions: ['require'],
 				},
 			]);
+			expect(errors).toStrictEqual([]);
 		});
 
 		test('complex exports with multiple features', () => {
@@ -233,6 +242,7 @@ export default testSuite(({ describe }) => {
 					conditions: ['default'],
 				},
 			]);
+			expect(errors).toStrictEqual([]);
 		});
 
 		test('null blocks wildcard patterns', () => {
@@ -253,6 +263,7 @@ export default testSuite(({ describe }) => {
 					conditions: ['default'],
 				},
 			]);
+			expect(errors).toStrictEqual([]);
 		});
 
 		test('returns errors for invalid subpath keys (not starting with .)', () => {

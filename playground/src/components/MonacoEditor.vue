@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
 import * as monaco from 'monaco-editor';
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
+// eslint-disable-next-line import-x/no-unresolved -- Vite virtual module
+import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+// eslint-disable-next-line import-x/no-unresolved -- Vite virtual module
+import JsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
 
 const model = defineModel<string>({ required: true });
 
@@ -13,14 +15,16 @@ let editor: monaco.editor.IStandaloneCodeEditor | null = null;
 globalThis.MonacoEnvironment = {
 	getWorker: (_: string, label: string) => {
 		if (label === 'json') {
-			return new jsonWorker();
+			return new JsonWorker();
 		}
-		return new editorWorker();
+		return new EditorWorker();
 	},
 };
 
 onMounted(() => {
-	if (!editorContainer.value) { return; }
+	if (!editorContainer.value) {
+		return;
+	}
 
 	editor = monaco.editor.create(editorContainer.value, {
 		value: model.value,

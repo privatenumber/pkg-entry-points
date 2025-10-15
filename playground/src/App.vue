@@ -2,7 +2,9 @@
 import { ref } from 'vue';
 import MonacoEditor from './components/MonacoEditor.vue';
 import Analysis from './components/Analysis.vue';
-import { parsePackageJson, type PackageJsonWithName } from './utils/parse-package-json';
+// eslint-disable-next-line import-x/no-unresolved -- Transpiled from TS
+import { parsePackageJson, type PackageJsonWithName } from './utils/parse-package-json.js';
+// eslint-disable-next-line import-x/no-unresolved -- Transpiled from TS
 import * as examples from './examples.js';
 
 const updateUrl = (content: string) => {
@@ -72,7 +74,9 @@ const loadExample = (exampleKey: keyof typeof examples) => {
 				<select
 					id="example-selector"
 					class="bg-gray-800 text-white px-3 py-1 rounded border border-gray-700"
-					@change="(e) => loadExample((e.target as HTMLSelectElement).value as keyof typeof examples)"
+					@change="
+						(e) => loadExample((e.target as HTMLSelectElement).value as keyof typeof examples)
+					"
 				>
 					<option value="">
 						-- Select Example --

@@ -1,15 +1,25 @@
 <script setup lang="ts">
-import type { PackageEntryPoints } from 'pkg-entry-points';
+import type { PackageEntryPoints, ParsedExport } from 'pkg-entry-points';
 import { computed } from 'vue';
 
 const props = defineProps<{
 	entryPoints: PackageEntryPoints;
+	parsedExports: ParsedExport[];
 	generatedFiles: string[];
 	hasWildcard: boolean;
 	error: string | null;
 }>();
 
 const entryPointCount = computed(() => Object.keys(props.entryPoints).length);
+
+function formatSubpath(subpath: string | string[]): string {
+	return Array.isArray(subpath) ? subpath.join('*') : subpath;
+}
+
+function formatTarget(target: string | string[] | null): string {
+	if (target === null) return 'null (blocked)';
+	return Array.isArray(target) ? target.join('*') : target;
+}
 </script>
 
 <template>
@@ -29,7 +39,29 @@ const entryPointCount = computed(() => Object.keys(props.entryPoints).length);
 			</div>
 
 			<div class="section">
-				<h3>Generated Files</h3>
+				<h3>1. Parsed Exports ({{ parsedExports.length }})</h3>
+				<p class="text-sm text-gray-600 mb-2">
+					Raw structure parsed from package.json exports field:
+				</p>
+				<ul v-if="parsedExports.length > 0" class="entry-list">
+					<li v-for="(entry, index) in parsedExports" :key="index" class="mb-2">
+						<div class="font-mono text-sm">
+							<strong class="text-blue-600">{{ formatSubpath(entry.subpath) }}</strong>
+							<span class="text-gray-500"> → </span>
+							<code class="text-green-600">{{ formatTarget(entry.target) }}</code>
+						</div>
+						<div class="text-xs text-gray-500 ml-4">
+							Conditions: [{{ entry.conditions.join(', ') }}]
+						</div>
+					</li>
+				</ul>
+				<p v-else class="empty">
+					No exports defined
+				</p>
+			</div>
+
+			<div class="section">
+				<h3>2. Generated Files</h3>
 				<p class="text-sm text-gray-600 mb-2">
 					Files auto-generated from exports (wildcards create multiple example files):
 				</p>
@@ -44,7 +76,10 @@ const entryPointCount = computed(() => Object.keys(props.entryPoints).length);
 			</div>
 
 			<div class="section">
-				<h3>Exposed Entry Points ({{ entryPointCount }})</h3>
+				<h3>3. Exposed Entry Points ({{ entryPointCount }})</h3>
+				<p class="text-sm text-gray-600 mb-2">
+					Final entry points after matching against actual files:
+				</p>
 				<p v-if="entryPointCount === 0" class="empty">
 					No entry points exposed
 				</p>

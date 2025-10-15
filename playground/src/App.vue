@@ -2,9 +2,9 @@
 import { ref, computed } from 'vue';
 import PackageEditor from './components/PackageEditor.vue';
 import ResultsPanel from './components/ResultsPanel.vue';
-import { getPackageEntryPointsSync } from 'pkg-entry-points';
+import { getPackageEntryPointsSync, parsePackageExports } from 'pkg-entry-points';
 import { MockFileSystem } from './mock-fs';
-import type { PackageEntryPoints } from 'pkg-entry-points';
+import type { PackageEntryPoints, ParsedExport } from 'pkg-entry-points';
 
 const mockFs = new MockFileSystem();
 
@@ -41,6 +41,7 @@ const defaultPackageJson = {
 
 const packageJsonContent = ref(JSON.stringify(defaultPackageJson, null, 2));
 const entryPoints = ref<PackageEntryPoints>({});
+const parsedExports = ref<ParsedExport[]>([]);
 const error = ref<string | null>(null);
 const generatedFiles = ref<string[]>([]);
 
@@ -97,6 +98,14 @@ function analyzePackage(content: string) {
 		console.log('Available files in mock fs:', mockFs.getAllFiles());
 		console.log('📦 Analyzing exports:', packageJson.exports);
 
+		// Parse exports structure
+		if (packageJson.exports) {
+			parsedExports.value = parsePackageExports(packageJson.exports);
+			console.log('📋 Parsed exports:', parsedExports.value);
+		} else {
+			parsedExports.value = [];
+		}
+
 		entryPoints.value = getPackageEntryPointsSync('.', mockFs as any);
 
 		console.log('✨ Entry points found:', entryPoints.value);
@@ -107,6 +116,7 @@ function analyzePackage(content: string) {
 		console.error('💥 Error during analysis:', err);
 		error.value = err instanceof Error ? err.message : String(err);
 		entryPoints.value = {};
+		parsedExports.value = [];
 		generatedFiles.value = [];
 	}
 }
@@ -171,6 +181,7 @@ analyzePackage(packageJsonContent.value);
 				</div>
 				<ResultsPanel
 					:entry-points="entryPoints"
+					:parsed-exports="parsedExports"
 					:generated-files="generatedFiles"
 					:has-wildcard="hasWildcard"
 					:error="error"

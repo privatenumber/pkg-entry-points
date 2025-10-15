@@ -7,7 +7,6 @@ import { parsePackageExports } from './parse-package-exports.js';
 import { analyzeExportsWithFiles } from './analyze-exports-with-files.js';
 import type { PackageEntryPoints } from './types.js';
 
-
 export const getPackageEntryPoints = async (
 	packagePath: string,
 	fs = _fs.promises,

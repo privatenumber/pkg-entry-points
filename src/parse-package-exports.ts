@@ -22,9 +22,11 @@ const traverseExports = (
 
 		results.push({
 			subpath: subpathHasStar ? context.subpath.split(STAR) : context.subpath,
-			target: exports === null ? null
-				: exports.includes(STAR) ? exports.split(STAR)
-				: exports,
+			target: exports === null
+				? null
+				: (exports.includes(STAR)
+					? exports.split(STAR)
+					: exports),
 			conditions: context.conditionsPath.length > 0 ? context.conditionsPath : ['default'],
 		});
 		return;
@@ -51,7 +53,10 @@ const traverseExports = (
 				if (Object.hasOwn(exports, subpath)) {
 					traverseExports(
 						(exports as PackageJson.ExportConditions)[subpath]!,
-						{ subpath, conditionsPath: [] },
+						{
+							subpath,
+							conditionsPath: [],
+						},
 						results,
 					);
 				}
@@ -65,7 +70,10 @@ const traverseExports = (
 
 					traverseExports(
 						(exports as PackageJson.ExportConditions)[condition]!,
-						{ ...context, conditionsPath: newConditionsPath },
+						{
+							...context,
+							conditionsPath: newConditionsPath,
+						},
 						results,
 					);
 				}
@@ -81,7 +89,10 @@ export const parsePackageExports = (
 
 	traverseExports(
 		exports,
-		{ subpath: '.', conditionsPath: [] },
+		{
+			subpath: '.',
+			conditionsPath: [],
+		},
 		results,
 	);
 

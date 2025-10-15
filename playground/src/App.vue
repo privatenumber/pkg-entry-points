@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, computed } from 'vue';
+import { reactive, computed, ref } from 'vue';
 import type { PackageJson } from 'type-fest';
 import MonacoEditor from './components/MonacoEditor.vue';
 import Analysis from './components/Analysis.vue';
@@ -35,6 +35,7 @@ const defaultPackageJson = {
 };
 
 const packageJson = reactive<PackageJson>(defaultPackageJson);
+const jsonError = ref<string | null>(null);
 
 const packageJsonContent = computed({
 	get: () => JSON.stringify(packageJson, null, 2),
@@ -42,8 +43,9 @@ const packageJsonContent = computed({
 		try {
 			const parsed = JSON.parse(value) as PackageJson;
 			Object.assign(packageJson, parsed);
-		} catch {
-			// Invalid JSON, ignore
+			jsonError.value = null;
+		} catch (error_) {
+			jsonError.value = error_ instanceof Error ? error_.message : String(error_);
 		}
 	},
 });
@@ -98,7 +100,10 @@ const loadExample = (exampleKey: keyof typeof examples) => {
 				<div class="bg-gray-800 text-white px-4 py-2 text-sm font-semibold">
 					Analysis Results
 				</div>
-				<Analysis :package-json="packageJson" />
+				<Analysis
+					:package-json="packageJson"
+					:error="jsonError"
+				/>
 			</div>
 		</div>
 	</div>

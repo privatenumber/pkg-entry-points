@@ -10,11 +10,12 @@ import { ref, computed, watch } from 'vue';
 
 const props = defineProps<{
 	packageJson: PackageJson;
+	error: string | null;
 }>();
 
 const entryPoints = ref<PackageEntryPoints>({});
 const parsedExports = ref<ParsedExport[]>([]);
-const error = ref<string | null>(null);
+const analysisError = ref<string | null>(null);
 const generatedFiles = ref<string[]>([]);
 
 const exampleNames = ['index', 'utils', '_private-api', '_internal/helper'];
@@ -49,6 +50,8 @@ const extractFilesFromExports = (exports: any): Set<string> => {
 
 const analyzePackage = () => {
 	try {
+		analysisError.value = null;
+
 		if (props.packageJson.exports) {
 			parsedExports.value = parsePackageExports(props.packageJson.exports);
 
@@ -61,11 +64,9 @@ const analyzePackage = () => {
 			generatedFiles.value = [];
 			entryPoints.value = {};
 		}
-
-		error.value = null;
 	} catch (error_) {
 		console.error('💥 Error during analysis:', error_);
-		error.value = error_ instanceof Error ? error_.message : String(error_);
+		analysisError.value = error_ instanceof Error ? error_.message : String(error_);
 		entryPoints.value = {};
 		parsedExports.value = [];
 		generatedFiles.value = [];
@@ -83,13 +84,21 @@ const hasWildcard = computed(() => JSON.stringify(props.packageJson.exports || {
 	<div class="flex-1 p-4">
 		<div
 			v-if="error"
-			class="bg-red-50 border border-red-200 rounded p-4 text-red-800"
+			class="bg-red-50 border border-red-200 rounded p-4 text-red-800 mb-4"
 		>
 			<strong>Error:</strong>
 			<pre class="mt-2 text-sm">{{ error }}</pre>
 		</div>
 
-		<template v-else>
+		<div
+			v-if="analysisError"
+			class="bg-red-50 border border-red-200 rounded p-4 text-red-800"
+		>
+			<strong>Analysis Error:</strong>
+			<pre class="mt-2 text-sm">{{ analysisError }}</pre>
+		</div>
+
+		<template v-else-if="!error">
 			<div
 				v-if="hasWildcard"
 				class="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4 text-yellow-800"

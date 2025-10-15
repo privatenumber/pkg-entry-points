@@ -1,27 +1,35 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["vite/client"],
-    "skipLibCheck": true,
+	"compilerOptions": {
+		"target": "ES2022",
+		"jsx": "preserve",
+		"lib": [
+			"ES2022",
+			"DOM",
+			"DOM.Iterable",
+		],
+		"moduleDetection": "force",
+		"useDefineForClassFields": true,
+		"module": "ESNext",
 
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
-    "noEmit": true,
-    "jsx": "preserve",
+		/* Bundler mode */
+		"moduleResolution": "bundler",
+		"types": [
+			"vite/client",
+		],
+		"allowImportingTsExtensions": true,
 
-    /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
-  },
-  "include": ["src"]
+		/* Linting */
+		"strict": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noEmit": true,
+		"verbatimModuleSyntax": true,
+		"skipLibCheck": true,
+		"erasableSyntaxOnly": true,
+		"noUncheckedSideEffectImports": true,
+	},
+	"include": [
+		"src",
+	],
 }

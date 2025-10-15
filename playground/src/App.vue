@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import {
+	parsePackageExports, analyzeExportsWithFiles, type PackageEntryPoints, type ParsedExport,
+} from 'pkg-entry-points';
 import MonacoEditor from './components/MonacoEditor.vue';
 import ResultsPanel from './components/ResultsPanel.vue';
-import { parsePackageExports, analyzeExportsWithFiles } from 'pkg-entry-points';
-import type { PackageEntryPoints, ParsedExport } from 'pkg-entry-points';
 
 const examples = {
 	basic: {
@@ -42,17 +43,17 @@ const parsedExports = ref<ParsedExport[]>([]);
 const error = ref<string | null>(null);
 const generatedFiles = ref<string[]>([]);
 
-function extractFilesFromExports(exports: any): Set<string> {
+const extractFilesFromExports = (exports: any): Set<string> => {
 	const files = new Set<string>();
 
-	function extract(value: any) {
+	const extract = (value: any) => {
 		if (typeof value === 'string' && value.startsWith('./')) {
 			files.add(value);
 
 			if (value.includes('*')) {
 				const exampleNames = ['index', 'utils', 'helpers', 'config', 'types', 'api', 'core'];
 				for (const example of exampleNames) {
-					const exampleFile = value.replace(/\*/g, example);
+					const exampleFile = value.replaceAll('*', example);
 					files.add(exampleFile);
 				}
 			}
@@ -65,13 +66,13 @@ function extractFilesFromExports(exports: any): Set<string> {
 				extract(value[key]);
 			}
 		}
-	}
+	};
 
 	extract(exports);
 	return files;
-}
+};
 
-function analyzePackage(content: string) {
+const analyzePackage = (content: string) => {
 	try {
 		console.log('═══════════════════════════════════════');
 		console.log('🔍 Starting package analysis');
@@ -102,23 +103,23 @@ function analyzePackage(content: string) {
 		console.log('═══════════════════════════════════════');
 
 		error.value = null;
-	} catch (err) {
-		console.error('💥 Error during analysis:', err);
-		error.value = err instanceof Error ? err.message : String(err);
+	} catch (error_) {
+		console.error('💥 Error during analysis:', error_);
+		error.value = error_ instanceof Error ? error_.message : String(error_);
 		entryPoints.value = {};
 		parsedExports.value = [];
 		generatedFiles.value = [];
 	}
-}
+};
 
 watch(packageJsonContent, (content) => {
 	analyzePackage(content);
 });
 
-function loadExample(exampleKey: keyof typeof examples) {
+const loadExample = (exampleKey: keyof typeof examples) => {
 	const example = examples[exampleKey];
 	packageJsonContent.value = JSON.stringify(example, null, 2);
-}
+};
 
 const hasWildcard = computed(() => {
 	try {
@@ -136,18 +137,31 @@ analyzePackage(packageJsonContent.value);
 <template>
 	<div class="h-screen overflow-hidden flex flex-col">
 		<header class="bg-gray-900 text-white p-4 flex items-center justify-between">
-			<h1 class="text-2xl font-bold">package.json Exports Playground</h1>
+			<h1 class="text-2xl font-bold">
+				package.json Exports Playground
+			</h1>
 			<div class="flex items-center gap-4">
-				<label for="example-selector" class="text-sm">Examples:</label>
+				<label
+					for="example-selector"
+					class="text-sm"
+				>Examples:</label>
 				<select
 					id="example-selector"
 					class="bg-gray-800 text-white px-3 py-1 rounded border border-gray-700"
 					@change="(e) => loadExample((e.target as HTMLSelectElement).value as keyof typeof examples)"
 				>
-					<option value="">-- Select Example --</option>
-					<option value="basic">Basic Exports</option>
-					<option value="wildcardDanger">Wildcard Danger ⚠️</option>
-					<option value="wildcardSafe">Wildcard Safe ✓</option>
+					<option value="">
+						-- Select Example --
+					</option>
+					<option value="basic">
+						Basic Exports
+					</option>
+					<option value="wildcardDanger">
+						Wildcard Danger ⚠️
+					</option>
+					<option value="wildcardSafe">
+						Wildcard Safe ✓
+					</option>
 				</select>
 			</div>
 		</header>

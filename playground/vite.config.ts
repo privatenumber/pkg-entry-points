@@ -13,8 +13,8 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			// Shim Node.js built-in modules for browser
-			'fs': '/src/fs-shim.ts',
-			'path': '/src/path-shim.ts',
+			fs: '/src/fs-shim.ts',
+			path: '/src/path-shim.ts',
 		},
 	},
 });

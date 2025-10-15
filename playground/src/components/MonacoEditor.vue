@@ -10,8 +10,8 @@ const editorContainer = ref<HTMLDivElement>();
 let editor: monaco.editor.IStandaloneCodeEditor | null = null;
 
 // Set up Monaco workers
-self.MonacoEnvironment = {
-	getWorker(_: string, label: string) {
+globalThis.MonacoEnvironment = {
+	getWorker: (_: string, label: string) => {
 		if (label === 'json') {
 			return new jsonWorker();
 		}
@@ -20,7 +20,7 @@ self.MonacoEnvironment = {
 };
 
 onMounted(() => {
-	if (!editorContainer.value) return;
+	if (!editorContainer.value) { return; }
 
 	editor = monaco.editor.create(editorContainer.value, {
 		value: model.value,
@@ -46,5 +46,8 @@ watch(model, (newValue) => {
 </script>
 
 <template>
-	<div ref="editorContainer" class="flex-1" />
+	<div
+		ref="editorContainer"
+		class="flex-1"
+	/>
 </template>

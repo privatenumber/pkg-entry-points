@@ -6,7 +6,7 @@ test('sets URL hash on initial render', async () => {
 	render(App);
 
 	// Verify hash is set on initial render
-	const hash = window.location.hash;
+	const { hash } = globalThis.location;
 	expect(hash).toBeTruthy();
 	expect(hash).toMatch(/^#/);
 
@@ -19,7 +19,7 @@ test('sets URL hash on initial render', async () => {
 test('updates URL hash when content changes via example selection', async () => {
 	const screen = render(App);
 
-	const initialHash = window.location.hash;
+	const initialHash = globalThis.location.hash;
 	expect(initialHash).toBeTruthy();
 
 	const initialDecoded = decodeURIComponent(atob(initialHash.slice(1)));
@@ -33,7 +33,7 @@ test('updates URL hash when content changes via example selection', async () => 
 	await new Promise(resolve => setTimeout(resolve, 100));
 
 	// Verify URL hash changed
-	const updatedHash = window.location.hash;
+	const updatedHash = globalThis.location.hash;
 	expect(updatedHash).not.toBe(initialHash);
 
 	// Decode and verify it contains the basic example content
@@ -59,11 +59,10 @@ test('loads content from URL hash on mount', async () => {
 		2,
 	);
 	const encoded = btoa(encodeURIComponent(testContent));
-	window.location.hash = encoded;
+	globalThis.location.hash = encoded;
 
 	const screen = render(App);
 
 	// Verify content is loaded from hash by checking the import statement in analysis
 	await expect.element(screen.getByText("import 'hash-test-package/hash'", { exact: false })).toBeInTheDocument();
 });
-

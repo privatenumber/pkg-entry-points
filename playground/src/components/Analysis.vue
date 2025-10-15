@@ -6,7 +6,7 @@ import {
 	type ParsedExport,
 } from 'pkg-entry-points';
 import { ref, computed, watch } from 'vue';
-import type { PackageJsonWithName } from '../types.js';
+import type { PackageJsonWithName } from '../utils/parse-package-json.js';
 
 const props = defineProps<{
 	packageJson: PackageJsonWithName;
@@ -79,7 +79,10 @@ const analyzePackage = () => {
 	}
 };
 
-watch(() => props.packageJson, analyzePackage, { immediate: true, deep: true });
+watch(() => props.packageJson, analyzePackage, {
+	immediate: true,
+	deep: true,
+});
 
 const entryPointCount = computed(() => Object.keys(entryPoints.value).length);
 
@@ -89,7 +92,8 @@ const groupedEntryPoints = computed(() => {
 		exportPattern: string;
 		exportValue: any;
 		isWildcard: boolean;
-		entries: Array<{ subpath: string; internalPath: string }>;
+		entries: Array<{ subpath: string;
+			internalPath: string }>;
 	}> = [];
 
 	// Build a map of which subpaths came from which export patterns
@@ -133,7 +137,10 @@ const groupedEntryPoints = computed(() => {
 				groups.push(group);
 			}
 
-			group.entries.push({ subpath, internalPath });
+			group.entries.push({
+				subpath,
+				internalPath,
+			});
 		}
 	}
 

@@ -2,46 +2,16 @@
 import { ref } from 'vue';
 import MonacoEditor from './components/MonacoEditor.vue';
 import Analysis from './components/Analysis.vue';
-import type { PackageJsonWithName } from './types.js';
-import type { PackageJson } from 'type-fest';
-
-const examples = {
-	basic: {
-		name: 'example-package',
-		exports: {
-			'.': './index.js',
-			'./utils': './utils.js',
-		},
-	},
-	wildcardDanger: {
-		name: 'dangerous-wildcards',
-		exports: {
-			'./*': './dist/*.js',
-		},
-	},
-	wildcardSafe: {
-		name: 'safe-wildcards',
-		exports: {
-			'./features/*': './dist/features/*/index.js',
-		},
-	},
-};
-
-const defaultPackageJson = {
-	name: 'example-package',
-	exports: {
-		'./a': './dist/a.js',
-		'./*': './dist/*.js',
-	},
-};
+import { parsePackageJson, type PackageJsonWithName } from './utils/parse-package-json';
+import * as examples from './examples.js';
 
 const updateUrl = (content: string) => {
 	const encoded = btoa(encodeURIComponent(content));
-	window.history.replaceState({}, '', `#${encoded}`);
+	globalThis.history.replaceState({}, '', `#${encoded}`);
 };
 
 const getInitialContent = (): string => {
-	const hash = window.location.hash.slice(1);
+	const hash = globalThis.location.hash.slice(1);
 
 	if (hash) {
 		try {
@@ -51,19 +21,9 @@ const getInitialContent = (): string => {
 		}
 	}
 
-	const defaultContent = JSON.stringify(defaultPackageJson, null, 2);
+	const defaultContent = JSON.stringify(examples.basic, null, 2);
 	updateUrl(defaultContent);
 	return defaultContent;
-};
-
-const parsePackageJson = (content: string): PackageJsonWithName => {
-	const parsed = JSON.parse(content) as PackageJson;
-
-	if (!parsed.name || typeof parsed.name !== 'string') {
-		throw new Error('package.json must have a "name" property');
-	}
-
-	return parsed as PackageJsonWithName;
 };
 
 const initialContent = getInitialContent();
@@ -72,7 +32,7 @@ let initialPackageJson: PackageJsonWithName;
 try {
 	initialPackageJson = parsePackageJson(initialContent);
 } catch {
-	initialPackageJson = defaultPackageJson;
+	initialPackageJson = examples.basic;
 }
 
 const packageJson = ref<PackageJsonWithName>(initialPackageJson);

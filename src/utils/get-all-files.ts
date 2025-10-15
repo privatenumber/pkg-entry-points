@@ -19,13 +19,15 @@ export const getAllFiles = async (
 	});
 
 	const result: string[] = [];
+	const nodeModulesPath = `${path.sep}node_modules${path.sep}`;
+
 	for (const entry of entries) {
 		if (!entry.isFile()) {
 			continue;
 		}
 
 		const relativePath = path.relative(directoryPath, entry.parentPath);
-		if (relativePath.split(path.sep).includes('node_modules')) {
+		if (relativePath.includes(nodeModulesPath)) {
 			continue;
 		}
 
@@ -53,13 +55,15 @@ export const getAllFilesSync = (
 	});
 
 	const result: string[] = [];
+	const nodeModulesPath = `${path.sep}node_modules${path.sep}`;
+
 	for (const entry of entries) {
 		if (!entry.isFile()) {
 			continue;
 		}
 
 		const relativePath = path.relative(directoryPath, entry.parentPath);
-		if (relativePath.split(path.sep).includes('node_modules')) {
+		if (relativePath.includes(nodeModulesPath)) {
 			continue;
 		}
 

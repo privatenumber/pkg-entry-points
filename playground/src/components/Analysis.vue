@@ -5,11 +5,11 @@ import {
 	type PackageEntryPoints,
 	type ParsedExport,
 } from 'pkg-entry-points';
-import type { PackageJson } from 'type-fest';
 import { ref, computed, watch } from 'vue';
+import type { PackageJsonWithName } from '../types.js';
 
 const props = defineProps<{
-	packageJson: PackageJson;
+	packageJson: PackageJsonWithName;
 	error: string | null;
 }>();
 

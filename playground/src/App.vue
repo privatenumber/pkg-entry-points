@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { reactive, computed, ref } from 'vue';
-import type { PackageJson } from 'type-fest';
+import { computed, ref } from 'vue';
 import MonacoEditor from './components/MonacoEditor.vue';
 import Analysis from './components/Analysis.vue';
+import type { PackageJsonWithName } from './types.js';
 
 const examples = {
 	basic: {
@@ -34,7 +34,7 @@ const defaultPackageJson = {
 	},
 };
 
-const packageJson = ref<PackageJson>(defaultPackageJson);
+const packageJson = ref<PackageJsonWithName>(defaultPackageJson);
 const jsonError = ref<string | null>(null);
 
 const packageJsonContent = computed({
@@ -42,7 +42,13 @@ const packageJsonContent = computed({
 	set: (value: string) => {
 		try {
 			const parsed = JSON.parse(value) as PackageJson;
-			packageJson.value = parsed;
+
+			if (!parsed.name || typeof parsed.name !== 'string') {
+				jsonError.value = 'package.json must have a "name" property';
+				return;
+			}
+
+			packageJson.value = parsed as PackageJsonWithName;
 			jsonError.value = null;
 		} catch (error_) {
 			jsonError.value = error_ instanceof Error ? error_.message : String(error_);

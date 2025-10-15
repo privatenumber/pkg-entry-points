@@ -47,10 +47,13 @@
 	"scripts": {
 		"build": "pkgroll --target=node12.19 --minify",
 		"lint": "lintroll --cache .",
-		"type-check": "tsc && pnpm -C playground type-check",
+		"type-check": "tsc",
 		"test": "tsx tests",
 		"dev": "tsx watch --conditions=development tests",
-		"prepack": "pnpm build && clean-pkg-json"
+		"prepack": "pnpm build && clean-pkg-json",
+		"playground:dev": "pnpm -C playground dev",
+		"playground:type-check": "pnpm -C playground type-check",
+		"playground:test": "pnpm -C playground test"
 	},
 	"engines": {
 		"node": ">=20.19.5"

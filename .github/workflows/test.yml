@@ -38,3 +38,9 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Playground type-check
+        run: pnpm playground:type-check
+
+      - name: Playground test
+        run: pnpm playground:test

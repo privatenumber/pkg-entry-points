@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import MonacoEditor from './components/MonacoEditor.vue';
 import Analysis from './components/Analysis.vue';
 import type { PackageJsonWithName } from './types.js';
+import type { PackageJson } from 'type-fest';
 
 const examples = {
 	basic: {
@@ -35,30 +36,32 @@ const defaultPackageJson = {
 };
 
 const packageJson = ref<PackageJsonWithName>(defaultPackageJson);
+const monacoString = ref(JSON.stringify(defaultPackageJson, null, 2));
 const jsonError = ref<string | null>(null);
 
-const packageJsonContent = computed({
-	get: () => JSON.stringify(packageJson.value, null, 2),
-	set: (value: string) => {
-		try {
-			const parsed = JSON.parse(value) as PackageJson;
+const parsePackageJson = (content: string): PackageJsonWithName => {
+	const parsed = JSON.parse(content) as PackageJson;
 
-			if (!parsed.name || typeof parsed.name !== 'string') {
-				jsonError.value = 'package.json must have a "name" property';
-				return;
-			}
+	if (!parsed.name || typeof parsed.name !== 'string') {
+		throw new Error('package.json must have a "name" property');
+	}
 
-			packageJson.value = parsed as PackageJsonWithName;
-			jsonError.value = null;
-		} catch (error_) {
-			jsonError.value = error_ instanceof Error ? error_.message : String(error_);
-		}
-	},
-});
+	return parsed as PackageJsonWithName;
+};
+
+const handleContentChange = (value: string) => {
+	jsonError.value = null;
+	try {
+		packageJson.value = parsePackageJson(value);
+	} catch (error_) {
+		jsonError.value = error_ instanceof Error ? error_.message : String(error_);
+	}
+};
 
 const loadExample = (exampleKey: keyof typeof examples) => {
 	const example = examples[exampleKey];
-	Object.assign(packageJson, example);
+	packageJson.value = example as PackageJsonWithName;
+	monacoString.value = JSON.stringify(example, null, 2);
 };
 </script>
 
@@ -99,7 +102,10 @@ const loadExample = (exampleKey: keyof typeof examples) => {
 				<div class="bg-gray-800 text-white px-4 py-2 text-sm font-semibold">
 					package.json
 				</div>
-				<MonacoEditor v-model="packageJsonContent" />
+				<MonacoEditor
+					:model-value="monacoString"
+					@update:model-value="handleContentChange"
+				/>
 			</div>
 
 			<div class="w-1/2 flex flex-col overflow-auto">

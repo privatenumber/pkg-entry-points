@@ -251,5 +251,27 @@ export default testSuite(({ describe }) => {
 				},
 			]);
 		});
+
+		test('ignores invalid subpath keys (not starting with ./)', () => {
+			const result = parsePackageExports({
+				'./a': './dist/a.js',
+				'./*': './dist/*.js',
+				notSubPath: './notSubPath',
+				'invalid-key': './invalid.js',
+			});
+
+			expect(result).toStrictEqual([
+				{
+					subpath: './a',
+					target: './dist/a.js',
+					conditions: ['default'],
+				},
+				{
+					subpath: ['./', ''],
+					target: ['./dist/', '.js'],
+					conditions: ['default'],
+				},
+			]);
+		});
 	});
 });

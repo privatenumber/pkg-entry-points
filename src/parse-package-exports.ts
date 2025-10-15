@@ -61,6 +61,11 @@ const traverseExports = (
 			// Multiple subpaths
 			for (const subpath of keys) {
 				if (Object.hasOwn(exports, subpath)) {
+					// Ignore keys that don't start with '.'
+					if (!subpath.startsWith('.')) {
+						continue;
+					}
+
 					traverseExports(
 						(exports as PackageJson.ExportConditions)[subpath]!,
 						{

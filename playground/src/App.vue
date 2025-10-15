@@ -35,9 +35,30 @@ const defaultPackageJson = {
 	},
 };
 
-const packageJson = ref<PackageJsonWithName>(defaultPackageJson);
-const monacoString = ref(JSON.stringify(defaultPackageJson, null, 2));
-const jsonError = ref<string | null>(null);
+const encodeToUrl = (content: string): string => {
+	return btoa(encodeURIComponent(content));
+};
+
+const decodeFromUrl = (encoded: string): string => {
+	return decodeURIComponent(atob(encoded));
+};
+
+const getInitialContent = (): string => {
+	const hash = window.location.hash.slice(1);
+
+	if (hash) {
+		try {
+			return decodeFromUrl(hash);
+		} catch {
+			// Invalid base64, use default
+		}
+	}
+
+	return JSON.stringify(defaultPackageJson, null, 2);
+};
+
+const initialContent = getInitialContent();
+let initialPackageJson: PackageJsonWithName;
 
 const parsePackageJson = (content: string): PackageJsonWithName => {
 	const parsed = JSON.parse(content) as PackageJson;
@@ -49,7 +70,23 @@ const parsePackageJson = (content: string): PackageJsonWithName => {
 	return parsed as PackageJsonWithName;
 };
 
+try {
+	initialPackageJson = parsePackageJson(initialContent);
+} catch {
+	initialPackageJson = defaultPackageJson;
+}
+
+const packageJson = ref<PackageJsonWithName>(initialPackageJson);
+const monacoString = ref(initialContent);
+const jsonError = ref<string | null>(null);
+
+const updateUrl = (content: string) => {
+	const encoded = encodeToUrl(content);
+	window.history.replaceState({}, '', `#${encoded}`);
+};
+
 const handleContentChange = (value: string) => {
+	updateUrl(value);
 	jsonError.value = null;
 	try {
 		packageJson.value = parsePackageJson(value);
@@ -61,7 +98,9 @@ const handleContentChange = (value: string) => {
 const loadExample = (exampleKey: keyof typeof examples) => {
 	const example = examples[exampleKey];
 	packageJson.value = example as PackageJsonWithName;
-	monacoString.value = JSON.stringify(example, null, 2);
+	const content = JSON.stringify(example, null, 2);
+	monacoString.value = content;
+	updateUrl(content);
 };
 </script>
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import PackageEditor from './components/PackageEditor.vue';
+import { ref, computed, watch } from 'vue';
+import MonacoEditor from './components/MonacoEditor.vue';
 import ResultsPanel from './components/ResultsPanel.vue';
 import { getPackageEntryPointsSync, parsePackageExports } from 'pkg-entry-points';
 import { MockFileSystem } from './mock-fs';
@@ -121,15 +121,13 @@ function analyzePackage(content: string) {
 	}
 }
 
-function handleEditorChange(content: string) {
-	packageJsonContent.value = content;
+watch(packageJsonContent, (content) => {
 	analyzePackage(content);
-}
+});
 
 function loadExample(exampleKey: keyof typeof examples) {
 	const example = examples[exampleKey];
 	packageJsonContent.value = JSON.stringify(example, null, 2);
-	analyzePackage(packageJsonContent.value);
 }
 
 const hasWildcard = computed(() => {
@@ -169,10 +167,7 @@ analyzePackage(packageJsonContent.value);
 				<div class="bg-gray-800 text-white px-4 py-2 text-sm font-semibold">
 					package.json
 				</div>
-				<PackageEditor
-					:initial-value="packageJsonContent"
-					@change="handleEditorChange"
-				/>
+				<MonacoEditor v-model="packageJsonContent" />
 			</div>
 
 			<div class="w-1/2 flex flex-col overflow-auto">

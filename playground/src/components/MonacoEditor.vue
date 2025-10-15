@@ -4,13 +4,7 @@ import * as monaco from 'monaco-editor';
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
 import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
 
-const props = defineProps<{
-	initialValue: string;
-}>();
-
-const emit = defineEmits<{
-	change: [content: string];
-}>();
+const model = defineModel<string>({ required: true });
 
 const editorContainer = ref<HTMLDivElement>();
 let editor: monaco.editor.IStandaloneCodeEditor | null = null;
@@ -29,7 +23,7 @@ onMounted(() => {
 	if (!editorContainer.value) return;
 
 	editor = monaco.editor.create(editorContainer.value, {
-		value: props.initialValue,
+		value: model.value,
 		language: 'json',
 		theme: 'vs-dark',
 		automaticLayout: true,
@@ -39,12 +33,12 @@ onMounted(() => {
 
 	editor.onDidChangeModelContent(() => {
 		if (editor) {
-			emit('change', editor.getValue());
+			model.value = editor.getValue();
 		}
 	});
 });
 
-watch(() => props.initialValue, (newValue) => {
+watch(model, (newValue) => {
 	if (editor && editor.getValue() !== newValue) {
 		editor.setValue(newValue);
 	}

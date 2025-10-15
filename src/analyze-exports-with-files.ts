@@ -119,6 +119,12 @@ export const analyzeExportsWithFiles = (
 	// Build final result, filtering nulls and wildcard blocks
 	const result: PackageEntryPoints = {};
 
+	// Pre-compute matchers for wildcard blocks
+	const wildcardBlockMatchers = wildcardBlocks.map(block => ({
+		matcher: createPathMatcher(block.subpath.join('*')),
+		conditions: block.conditions,
+	}));
+
 	for (const [subpath, conditionsMap] of Array.from(entries)) {
 		type ConditionEntry = [string, {
 			path: string | null;
@@ -134,9 +140,8 @@ export const analyzeExportsWithFiles = (
 				}
 
 				// Check wildcard blocks
-				for (const block of wildcardBlocks) {
-					const matcher = createPathMatcher(block.subpath.join('*'));
-					const matchesPattern = pathMatches(matcher, subpath) !== undefined;
+				for (const block of wildcardBlockMatchers) {
+					const matchesPattern = pathMatches(block.matcher, subpath) !== undefined;
 					const matchesConditions = conditionsKey === block.conditions;
 					if (matchesPattern && matchesConditions) {
 						return false;

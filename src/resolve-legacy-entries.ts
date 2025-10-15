@@ -34,8 +34,9 @@ export const resolveLegacyEntries = (
 	for (const extension of ['', '.js', '.json']) {
 		const target = packageMain + extension;
 		if (packageFiles.includes(target)) {
-			legacyExports['.'] = legacyCondition(target);
-			legacyExports[target] = legacyCondition(target);
+			const condition = legacyCondition(target);
+			legacyExports['.'] = condition;
+			legacyExports[target] = condition;
 			break;
 		}
 	}

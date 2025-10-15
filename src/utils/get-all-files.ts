@@ -18,16 +18,21 @@ export const getAllFiles = async (
 		withFileTypes: true,
 	});
 
-	return entries
-		.filter((entry) => {
-			if (!entry.isFile()) {
-				return false;
-			}
+	const result: string[] = [];
+	for (const entry of entries) {
+		if (!entry.isFile()) {
+			continue;
+		}
 
-			const relativePath = path.relative(directoryPath, entry.parentPath);
-			return !relativePath.split(path.sep).includes('node_modules');
-		})
-		.map(entry => `./${path.join(path.relative(directoryPath, entry.parentPath), entry.name)}`);
+		const relativePath = path.relative(directoryPath, entry.parentPath);
+		if (relativePath.split(path.sep).includes('node_modules')) {
+			continue;
+		}
+
+		result.push(`./${path.join(relativePath, entry.name)}`);
+	}
+
+	return result;
 };
 
 /**
@@ -47,14 +52,19 @@ export const getAllFilesSync = (
 		withFileTypes: true,
 	});
 
-	return entries
-		.filter((entry) => {
-			if (!entry.isFile()) {
-				return false;
-			}
+	const result: string[] = [];
+	for (const entry of entries) {
+		if (!entry.isFile()) {
+			continue;
+		}
 
-			const relativePath = path.relative(directoryPath, entry.parentPath);
-			return !relativePath.split(path.sep).includes('node_modules');
-		})
-		.map(entry => `./${path.join(path.relative(directoryPath, entry.parentPath), entry.name)}`);
+		const relativePath = path.relative(directoryPath, entry.parentPath);
+		if (relativePath.split(path.sep).includes('node_modules')) {
+			continue;
+		}
+
+		result.push(`./${path.join(relativePath, entry.name)}`);
+	}
+
+	return result;
 };

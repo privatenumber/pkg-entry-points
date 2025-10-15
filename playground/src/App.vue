@@ -4,7 +4,7 @@ import {
 	parsePackageExports, analyzeExportsWithFiles, type PackageEntryPoints, type ParsedExport,
 } from 'pkg-entry-points';
 import MonacoEditor from './components/MonacoEditor.vue';
-import ResultsPanel from './components/ResultsPanel.vue';
+import ResultsPanel from './components/Analysis.vue';
 
 const examples = {
 	basic: {

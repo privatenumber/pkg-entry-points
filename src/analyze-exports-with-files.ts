@@ -1,13 +1,10 @@
-import type { PackageJson } from 'type-fest';
-import { parsePackageExports } from './parse-package-exports.js';
 import { createPathMatcher, pathMatches } from './utils/path-matcher.js';
-import type { PackageEntryPoints } from './types.js';
+import type { PackageEntryPoints, ParsedExport } from './types.js';
 
 export const analyzeExportsWithFiles = (
-	exports: PackageJson.Exports,
+	parsed: ParsedExport[],
 	packageFiles: string[],
 ): PackageEntryPoints => {
-	const parsed = parsePackageExports(exports);
 
 	// Build map of subpath -> conditions -> file path
 	// Track whether each entry came from a wildcard or static subpath

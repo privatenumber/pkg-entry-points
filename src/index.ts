@@ -3,6 +3,7 @@ import path from 'path';
 import type { PackageJson } from 'type-fest';
 import { getAllFiles, getAllFilesSync } from './utils/get-all-files.js';
 import { resolveLegacyEntries } from './resolve-legacy-entries.js';
+import { parsePackageExports } from './parse-package-exports.js';
 import { analyzeExportsWithFiles } from './analyze-exports-with-files.js';
 import type { PackageEntryPoints } from './types.js';
 
@@ -16,7 +17,8 @@ export const getPackageEntryPoints = async (
 	const packageFiles = await getAllFiles(fs, packagePath);
 
 	if (packageJson.exports !== undefined) {
-		return analyzeExportsWithFiles(packageJson.exports, packageFiles);
+		const parsed = parsePackageExports(packageJson.exports);
+		return analyzeExportsWithFiles(parsed, packageFiles);
 	}
 
 	return resolveLegacyEntries(packageJson, packageFiles);
@@ -31,7 +33,8 @@ export const getPackageEntryPointsSync = (
 	const packageFiles = getAllFilesSync(fs, packagePath);
 
 	if (packageJson.exports !== undefined) {
-		return analyzeExportsWithFiles(packageJson.exports, packageFiles);
+		const parsed = parsePackageExports(packageJson.exports);
+		return analyzeExportsWithFiles(parsed, packageFiles);
 	}
 
 	return resolveLegacyEntries(packageJson, packageFiles);

@@ -51,6 +51,7 @@
 		"test": "tsx tests",
 		"dev": "tsx watch --conditions=development tests",
 		"prepack": "pnpm build && clean-pkg-json",
+		"prepare": "skills-npm",
 		"playground:dev": "pnpm -C playground dev",
 		"playground:type-check": "pnpm -C playground type-check",
 		"playground:test": "pnpm -C playground test"
@@ -64,8 +65,9 @@
 		"execa": "^9.6.0",
 		"fs-fixture": "^2.9.0",
 		"lintroll": "^1.23.1",
-		"manten": "^1.5.0",
+		"manten": "^2.0.0",
 		"pkgroll": "^2.18.1",
+		"skills-npm": "^1.0.0",
 		"tsx": "^4.20.6",
 		"type-fest": "^5.0.1",
 		"typescript": "^5.9.3"

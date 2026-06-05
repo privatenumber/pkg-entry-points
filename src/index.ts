@@ -84,6 +84,96 @@ const getConditions: GetConditions = (
 	return conditions;
 };
 
+type Block = [subpath: string | PathMatcher, condition: string];
+
+type SubpathConditions = {
+	[conditions: string]: string;
+};
+
+/**
+ * Split blocks into exact-subpath blocks (matched via O(1) Map lookup) and
+ * wildcard blocks (matched per subpath). This avoids rescanning every block
+ * for every (subpath × condition) pair.
+ */
+const indexBlocks = (
+	blocks: Block[],
+) => {
+	const exactBlocks = new Map<string, Set<string>>();
+	const starBlocks: [PathMatcher, string][] = [];
+	for (const [blockPath, blockCondition] of blocks) {
+		if (typeof blockPath === 'string') {
+			let conditions = exactBlocks.get(blockPath);
+			if (!conditions) {
+				conditions = new Set();
+				exactBlocks.set(blockPath, conditions);
+			}
+			conditions.add(blockCondition);
+		} else {
+			starBlocks.push([blockPath, blockCondition]);
+		}
+	}
+
+	return {
+		exactBlocks,
+		starBlocks,
+	};
+};
+
+/**
+ * Conditions blocked for a subpath: its exact-block conditions, plus any
+ * matching wildcard-block conditions.
+ */
+const getBlockedConditions = (
+	subpath: string,
+	exactBlocks: Map<string, Set<string>>,
+	starBlocks: [PathMatcher, string][],
+): Set<string> | undefined => {
+	const exactBlocked = exactBlocks.get(subpath);
+	if (starBlocks.length === 0) {
+		return exactBlocked;
+	}
+
+	let blocked: Set<string> | undefined;
+	for (let i = 0; i < starBlocks.length; i += 1) {
+		const starBlock = starBlocks[i];
+		if (pathMatches(starBlock[0], subpath)) {
+			if (!blocked) {
+				blocked = new Set(exactBlocked);
+			}
+			blocked.add(starBlock[1]);
+		}
+	}
+
+	return blocked ?? exactBlocked;
+};
+
+/**
+ * Build the unblocked, sorted condition/path entries for a single subpath.
+ */
+const collectSubpathEntries = (
+	subpathMap: SubpathConditions,
+	blockedConditions: Set<string> | undefined,
+): ConditionToPath[] => {
+	const entries: ConditionToPath[] = [];
+	for (const conditions in subpathMap) {
+		if (!Object.hasOwn(subpathMap, conditions)) {
+			continue;
+		}
+
+		if (blockedConditions?.has(conditions)) {
+			continue;
+		}
+
+		entries.push([conditions.split('\0'), subpathMap[conditions]]);
+	}
+
+	entries.sort(
+		([conditionsA], [conditionsB]) => conditionsA.length - conditionsB.length,
+	);
+
+	return entries;
+};
+
 const analyzeExportsWithFiles = (
 	exports: PackageJson.Exports,
 	packageFiles: string[],
@@ -104,15 +194,10 @@ const analyzeExportsWithFiles = (
 	}
 
 	const subpathConditions: {
-		[subpath: string]: {
-			[conditions: string]: string;
-		};
+		[subpath: string]: SubpathConditions;
 	} = {};
 
-	const blocks: [
-		subpath: string | PathMatcher,
-		condition: string,
-	][] = [];
+	const blocks: Block[] = [];
 
 	for (const rawSubpath of keys) {
 		const conditions = getConditions(
@@ -163,26 +248,7 @@ const analyzeExportsWithFiles = (
 		}
 	}
 
-	/**
-	 * Index blocks so each subpath is matched once: exact-subpath blocks become
-	 * O(1) Map lookups, and only wildcard blocks are matched per subpath. This
-	 * replaces rescanning every block for every (subpath × condition) pair.
-	 */
-	const exactBlocks = new Map<string, Set<string>>();
-	const starBlocks: [PathMatcher, string][] = [];
-	for (const [blockPath, blockCondition] of blocks) {
-		if (typeof blockPath === 'string') {
-			let blockedConditions = exactBlocks.get(blockPath);
-			if (!blockedConditions) {
-				blockedConditions = new Set();
-				exactBlocks.set(blockPath, blockedConditions);
-			}
-			blockedConditions.add(blockCondition);
-		} else {
-			starBlocks.push([blockPath, blockCondition]);
-		}
-	}
-	const hasStarBlocks = starBlocks.length > 0;
+	const { exactBlocks, starBlocks } = indexBlocks(blocks);
 
 	const unblockedExports: PackageEntryPoints = {};
 	for (const subpath in subpathConditions) {
@@ -190,38 +256,11 @@ const analyzeExportsWithFiles = (
 			continue;
 		}
 
-		// Conditions blocked for this subpath (exact blocks, plus any wildcard hits).
-		let blockedConditions = exactBlocks.get(subpath);
-		if (hasStarBlocks) {
-			let matchedConditions: Set<string> | undefined;
-			for (let i = 0; i < starBlocks.length; i += 1) {
-				if (pathMatches(starBlocks[i][0], subpath)) {
-					if (!matchedConditions) {
-						matchedConditions = new Set(blockedConditions);
-					}
-					matchedConditions.add(starBlocks[i][1]);
-				}
-			}
-			if (matchedConditions) {
-				blockedConditions = matchedConditions;
-			}
-		}
-
-		const subpathMap = subpathConditions[subpath];
-		const conditionsEntries: ConditionToPath[] = [];
-		for (const conditions in subpathMap) {
-			if (!Object.hasOwn(subpathMap, conditions)) {
-				continue;
-			}
-
-			if (blockedConditions?.has(conditions)) {
-				continue;
-			}
-
-			conditionsEntries.push([conditions.split('\0'), subpathMap[conditions]]);
-		}
-		conditionsEntries.sort(([conditionsA], [conditionsB]) => conditionsA.length - conditionsB.length);
-
+		const blockedConditions = getBlockedConditions(subpath, exactBlocks, starBlocks);
+		const conditionsEntries = collectSubpathEntries(
+			subpathConditions[subpath],
+			blockedConditions,
+		);
 		if (conditionsEntries.length > 0) {
 			unblockedExports[subpath] = conditionsEntries;
 		}

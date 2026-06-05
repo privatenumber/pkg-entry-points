@@ -162,27 +162,64 @@ const analyzeExportsWithFiles = (
 		}
 	}
 
+	/**
+	 * Index blocks so each subpath is matched once: exact-subpath blocks become
+	 * O(1) Map lookups, and only wildcard blocks are matched per subpath. This
+	 * replaces rescanning every block for every (subpath × condition) pair.
+	 */
+	const exactBlocks = new Map<string, Set<string>>();
+	const starBlocks: [PathMatcher, string][] = [];
+	for (const [blockPath, blockCondition] of blocks) {
+		if (typeof blockPath === 'string') {
+			let blockedConditions = exactBlocks.get(blockPath);
+			if (!blockedConditions) {
+				blockedConditions = new Set();
+				exactBlocks.set(blockPath, blockedConditions);
+			}
+			blockedConditions.add(blockCondition);
+		} else {
+			starBlocks.push([blockPath, blockCondition]);
+		}
+	}
+	const hasStarBlocks = starBlocks.length > 0;
+
 	const unblockedExports: PackageEntryPoints = {};
 	for (const subpath in subpathConditions) {
 		if (!Object.hasOwn(subpathConditions, subpath)) {
 			continue;
 		}
 
-		const conditionsEntries = Object.entries(subpathConditions[subpath])
-			.filter(
-				([conditions]) => !blocks.some(
-					([blockPath, blockCondition]) => (
-						(
-							typeof blockPath === 'string'
-								? blockPath === subpath
-								: pathMatches(blockPath, subpath)
-						)
-						&& conditions === blockCondition
-					),
-				),
-			)
-			.map(([conditions, internalPath]): ConditionToPath => [JSON.parse(conditions), internalPath])
-			.sort(([conditionsA], [conditionsB]) => conditionsA.length - conditionsB.length);
+		// Conditions blocked for this subpath (exact blocks, plus any wildcard hits).
+		let blockedConditions = exactBlocks.get(subpath);
+		if (hasStarBlocks) {
+			let matchedConditions: Set<string> | undefined;
+			for (let i = 0; i < starBlocks.length; i += 1) {
+				if (pathMatches(starBlocks[i][0], subpath)) {
+					if (!matchedConditions) {
+						matchedConditions = new Set(blockedConditions);
+					}
+					matchedConditions.add(starBlocks[i][1]);
+				}
+			}
+			if (matchedConditions) {
+				blockedConditions = matchedConditions;
+			}
+		}
+
+		const subpathMap = subpathConditions[subpath];
+		const conditionsEntries: ConditionToPath[] = [];
+		for (const conditions in subpathMap) {
+			if (!Object.hasOwn(subpathMap, conditions)) {
+				continue;
+			}
+
+			if (blockedConditions?.has(conditions)) {
+				continue;
+			}
+
+			conditionsEntries.push([JSON.parse(conditions), subpathMap[conditions]]);
+		}
+		conditionsEntries.sort(([conditionsA], [conditionsB]) => conditionsA.length - conditionsB.length);
 
 		if (conditionsEntries.length > 0) {
 			unblockedExports[subpath] = conditionsEntries;

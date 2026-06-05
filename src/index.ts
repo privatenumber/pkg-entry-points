@@ -121,6 +121,7 @@ const analyzeExportsWithFiles = (
 		);
 
 		const subpathStar = rawSubpath.includes(STAR);
+		const subpathParts = subpathStar ? rawSubpath.split(STAR) : undefined;
 		for (const condition in conditions) {
 			if (!Object.hasOwn(conditions, condition)) {
 				continue;
@@ -132,7 +133,7 @@ const analyzeExportsWithFiles = (
 					let subpath = rawSubpath;
 					if (subpathStar) {
 						const hasStar = Array.isArray(internalPath);
-						subpath = rawSubpath.split(STAR).join(
+						subpath = subpathParts!.join(
 							hasStar
 								? internalPath[1]
 								: '_',

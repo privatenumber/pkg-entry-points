@@ -3,6 +3,57 @@ import path from 'path';
 
 const nodeModulesPath = `node_modules${path.sep}`;
 
+type Dirent = {
+	name: string;
+	parentPath: string;
+	isFile: () => boolean;
+};
+
+/**
+ * Convert recursive readdir entries to package-relative paths.
+ *
+ * In a recursive listing, every `entry.parentPath` is `directoryPath` itself or
+ * a descendant of it, so the package-relative path is a plain string slice and
+ * the entry path is a concatenation. This avoids `path.relative`/`path.join`
+ * normalizing every entry, which dominates the cost of scanning large packages.
+ */
+const collectFiles = (
+	entries: Dirent[],
+	directoryPath: string,
+): string[] => {
+	// Offset of the first character after `directoryPath` and its separator.
+	const baseLength = (
+		directoryPath.endsWith(path.sep)
+			? directoryPath.length - 1
+			: directoryPath.length
+	) + 1;
+
+	const result: string[] = [];
+	for (const entry of entries) {
+		if (!entry.isFile()) {
+			continue;
+		}
+
+		const { parentPath } = entry;
+		const relativeParentPath = (
+			parentPath.length > baseLength
+				? parentPath.slice(baseLength)
+				: ''
+		);
+		if (relativeParentPath.startsWith(nodeModulesPath)) {
+			continue;
+		}
+
+		result.push(
+			relativeParentPath
+				? `./${relativeParentPath}${path.sep}${entry.name}`
+				: `./${entry.name}`,
+		);
+	}
+
+	return result;
+};
+
 /**
  * Recursively list all files in a directory.
  *
@@ -20,21 +71,7 @@ export const getAllFiles = async (
 		withFileTypes: true,
 	});
 
-	const result: string[] = [];
-	for (const entry of entries) {
-		if (!entry.isFile()) {
-			continue;
-		}
-
-		const relativeParentPath = path.relative(directoryPath, entry.parentPath);
-		if (relativeParentPath.startsWith(nodeModulesPath)) {
-			continue;
-		}
-
-		result.push(`./${path.join(relativeParentPath, entry.name)}`);
-	}
-
-	return result;
+	return collectFiles(entries, directoryPath);
 };
 
 /**
@@ -54,19 +91,5 @@ export const getAllFilesSync = (
 		withFileTypes: true,
 	});
 
-	const result: string[] = [];
-	for (const entry of entries) {
-		if (!entry.isFile()) {
-			continue;
-		}
-
-		const relativeParentPath = path.relative(directoryPath, entry.parentPath);
-		if (relativeParentPath.startsWith(nodeModulesPath)) {
-			continue;
-		}
-
-		result.push(`./${path.join(relativeParentPath, entry.name)}`);
-	}
-
-	return result;
+	return collectFiles(entries, directoryPath);
 };

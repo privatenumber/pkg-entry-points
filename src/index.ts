@@ -36,7 +36,7 @@ const getConditions: GetConditions = (
 			conditionsPath.push('default');
 		}
 
-		const conditionsKey = JSON.stringify(conditionsPath);
+		const conditionsKey = conditionsPath.join('\0');
 		if (!Object.hasOwn(conditions, conditionsKey)) {
 			if (exports === null) {
 				conditions[conditionsKey] = exports;
@@ -217,7 +217,7 @@ const analyzeExportsWithFiles = (
 				continue;
 			}
 
-			conditionsEntries.push([JSON.parse(conditions), subpathMap[conditions]]);
+			conditionsEntries.push([conditions.split('\0'), subpathMap[conditions]]);
 		}
 		conditionsEntries.sort(([conditionsA], [conditionsB]) => conditionsA.length - conditionsB.length);
 

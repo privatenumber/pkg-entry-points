@@ -22,5 +22,8 @@ node_modules/
 # Distribution
 dist
 
+# Coverage
+coverage
+
 # Cache
 .eslintcache

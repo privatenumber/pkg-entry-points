@@ -129,40 +129,42 @@ const scaling = [256, 1024, 4096].map(count => ({
 	fs: exportsFs(wildcardExports, distFiles(count)),
 }));
 
-const wildcardFs = exportsFs(wildcardExports, distFiles(1024));
-const blocksFs = exportsFs(wildcardWithBlocks(), distFiles(1024));
-const conditionsFs = exportsFs(explicitConditions(), distFiles(64));
-const legacyFs = createFs(legacyManifest, legacyFiles(1024));
+const scenarios = [
+	{
+		name: 'wildcard exports',
+		fs: exportsFs(wildcardExports, distFiles(1024)),
+	},
+	{
+		name: 'wildcard exports + null blocks',
+		fs: exportsFs(wildcardWithBlocks(), distFiles(1024)),
+	},
+	{
+		name: 'explicit subpaths + conditions',
+		fs: exportsFs(explicitConditions(), distFiles(64)),
+	},
+	{
+		name: 'legacy (no exports field)',
+		fs: createFs(legacyManifest, legacyFiles(1024)),
+	},
+];
+
+const measure = (fs: typeof nodeFs) => doNotOptimize(getPackageEntryPointsSync(root, fs));
 
 boxplot(() => {
 	for (const { count, fs } of scaling) {
-		bench(
-			`wildcard exports · ${count} files`,
-			() => doNotOptimize(getPackageEntryPointsSync(root, fs)),
-		);
+		bench(`wildcard exports · ${count} files`, () => measure(fs));
 	}
 });
 
 summary(() => {
-	bench(
-		'wildcard exports',
-		() => doNotOptimize(getPackageEntryPointsSync(root, wildcardFs)),
-	);
-	bench(
-		'wildcard exports + null blocks',
-		() => doNotOptimize(getPackageEntryPointsSync(root, blocksFs)),
-	);
-	bench(
-		'explicit subpaths + conditions',
-		() => doNotOptimize(getPackageEntryPointsSync(root, conditionsFs)),
-	);
-	bench(
-		'legacy (no exports field)',
-		() => doNotOptimize(getPackageEntryPointsSync(root, legacyFs)),
-	);
+	for (const { name, fs } of scenarios) {
+		bench(name, () => measure(fs));
+	}
 });
 
-run().catch((error: unknown) => {
+// `throw: true` so a broken benchmark (e.g. the fake fs drifting from the real
+// API) fails the command instead of silently reporting success.
+run({ throw: true }).catch((error: unknown) => {
 	process.exitCode = 1;
 	throw error;
 });

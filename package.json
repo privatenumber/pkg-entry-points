@@ -49,6 +49,7 @@
 		"lint": "lintroll --cache .",
 		"type-check": "tsc",
 		"test": "tsx tests",
+		"benchmark": "tsx --conditions=development scripts/benchmark.ts",
 		"dev": "tsx watch --conditions=development tests",
 		"prepack": "pnpm build && clean-pkg-json"
 	},
@@ -62,6 +63,7 @@
 		"fs-fixture": "^2.9.0",
 		"lintroll": "^1.23.4",
 		"manten": "^1.5.0",
+		"mitata": "^1.0.34",
 		"pkgroll": "^2.19.0",
 		"tsx": "^4.21.0",
 		"type-fest": "^5.1.0",

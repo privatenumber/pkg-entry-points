@@ -6,6 +6,7 @@ describe('pkg-entry-points', ({ runTestSuite }) => {
 	runTestSuite(import('./specs/null-block.js'));
 	runTestSuite(import('./specs/merge-conditions.js'));
 	runTestSuite(import('./specs/no-exports.js'));
-
-	// runTestSuite(import('./specs/nodejs-behavior.js'));
+	runTestSuite(import('./specs/discovery.js'));
+	runTestSuite(import('./specs/characterization.js'));
+	runTestSuite(import('./specs/nodejs-behavior.js'));
 });

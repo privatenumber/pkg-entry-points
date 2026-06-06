@@ -1,0 +1,368 @@
+{
+	"legacy: no main (index.js)": {
+		".": [
+			[
+				[
+					"default"
+				],
+				"./index.js"
+			]
+		],
+		"./helper.mjs": [
+			[
+				[
+					"default"
+				],
+				"./helper.mjs"
+			]
+		],
+		"./index.js": [
+			[
+				[
+					"default"
+				],
+				"./index.js"
+			]
+		],
+		"./package.json": [
+			[
+				[
+					"default"
+				],
+				"./package.json"
+			]
+		]
+	},
+	"exports: fallback array with protocol": {
+		".": [
+			[
+				[
+					"default"
+				],
+				"./real.mjs"
+			]
+		]
+	},
+	"exports: empty object": {},
+	"legacy: invalid main": {
+		"./index.js": [
+			[
+				[
+					"default"
+				],
+				"./index.js"
+			]
+		],
+		"./package.json": [
+			[
+				[
+					"default"
+				],
+				"./package.json"
+			]
+		]
+	},
+	"exports: wildcard to static (underscore)": {
+		"./prefix_.suffix": [
+			[
+				[
+					"default"
+				],
+				"./target.mjs"
+			]
+		]
+	},
+	"exports: string": {
+		".": [
+			[
+				[
+					"default"
+				],
+				"./index.mjs"
+			]
+		]
+	},
+	"exports: conditions object (no subpath keys)": {
+		".": [
+			[
+				[
+					"types"
+				],
+				"./index.d.ts"
+			],
+			[
+				[
+					"import"
+				],
+				"./index.mjs"
+			],
+			[
+				[
+					"require"
+				],
+				"./index.cjs"
+			]
+		]
+	},
+	"exports: subpaths with conditions": {
+		".": [
+			[
+				[
+					"import"
+				],
+				"./index.mjs"
+			],
+			[
+				[
+					"require"
+				],
+				"./index.cjs"
+			]
+		],
+		"./feature": [
+			[
+				[
+					"import"
+				],
+				"./feature.mjs"
+			],
+			[
+				[
+					"require"
+				],
+				"./feature.cjs"
+			]
+		]
+	},
+	"exports: nested conditions": {
+		".": [
+			[
+				[
+					"default"
+				],
+				"./default.mjs"
+			],
+			[
+				[
+					"import",
+					"node"
+				],
+				"./node.mjs"
+			],
+			[
+				[
+					"node",
+					"require"
+				],
+				"./node.cjs"
+			]
+		]
+	},
+	"exports: null": {},
+	"exports: null block (exact)": {
+		"./public": [
+			[
+				[
+					"default"
+				],
+				"./public.mjs"
+			]
+		]
+	},
+	"exports: fallback array of strings": {
+		".": [
+			[
+				[
+					"default"
+				],
+				"./first.mjs"
+			]
+		]
+	},
+	"legacy: with main": {
+		".": [
+			[
+				[
+					"default"
+				],
+				"./lib/main.js"
+			]
+		],
+		"./data.json": [
+			[
+				[
+					"default"
+				],
+				"./data.json"
+			]
+		],
+		"./lib/main.js": [
+			[
+				[
+					"default"
+				],
+				"./lib/main.js"
+			]
+		],
+		"./lib/other.js": [
+			[
+				[
+					"default"
+				],
+				"./lib/other.js"
+			]
+		],
+		"./package.json": [
+			[
+				[
+					"default"
+				],
+				"./package.json"
+			]
+		],
+		"./types.d.ts": [
+			[
+				[
+					"default"
+				],
+				"./types.d.ts"
+			]
+		]
+	},
+	"exports: null block (star)": {
+		"./public.js": [
+			[
+				[
+					"default"
+				],
+				"./public.js"
+			]
+		]
+	},
+	"vue-like (subset)": {
+		".": [
+			[
+				[
+					"types"
+				],
+				"./dist/vue.d.ts"
+			],
+			[
+				[
+					"import"
+				],
+				"./index.mjs"
+			],
+			[
+				[
+					"require"
+				],
+				"./index.js"
+			]
+		],
+		"./dist/vue.cjs.js": [
+			[
+				[
+					"default"
+				],
+				"./dist/vue.cjs.js"
+			]
+		],
+		"./dist/vue.d.ts": [
+			[
+				[
+					"default"
+				],
+				"./dist/vue.d.ts"
+			]
+		],
+		"./package.json": [
+			[
+				[
+					"default"
+				],
+				"./package.json"
+			]
+		],
+		"./server-renderer": [
+			[
+				[
+					"import"
+				],
+				"./server-renderer/index.mjs"
+			],
+			[
+				[
+					"require"
+				],
+				"./server-renderer/index.js"
+			]
+		]
+	},
+	"exports: wildcard with conditions": {
+		".": [
+			[
+				[
+					"types"
+				],
+				"./index.d.ts"
+			],
+			[
+				[
+					"import"
+				],
+				"./index.mjs"
+			]
+		],
+		"./a": [
+			[
+				[
+					"types"
+				],
+				"./dist/a.d.ts"
+			],
+			[
+				[
+					"import"
+				],
+				"./dist/a.mjs"
+			]
+		]
+	},
+	"exports: wildcard": {
+		"./a": [
+			[
+				[
+					"default"
+				],
+				"./dist/a.mjs"
+			]
+		],
+		"./nested/b": [
+			[
+				[
+					"default"
+				],
+				"./dist/nested/b.mjs"
+			]
+		]
+	},
+	"exports: multi-star value": {
+		"./a": [
+			[
+				[
+					"default"
+				],
+				"./dir/a/file-a.mjs"
+			]
+		],
+		"./b": [
+			[
+				[
+					"default"
+				],
+				"./dir/b/file-b.mjs"
+			]
+		]
+	}
+}

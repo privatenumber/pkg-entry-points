@@ -274,6 +274,93 @@ export default testSuite(({ describe }) => {
 						});
 					});
 				});
+
+				describe('real-world shapes', ({ test }) => {
+					test('wildcard to a conditions object', async () => {
+						await using pkg = await createPackage({
+							pkg: {
+								'package.json': createPackageJson({
+									exports: {
+										'.': {
+											types: './index.d.ts',
+											import: './index.mjs',
+										},
+										'./*': {
+											types: './dist/*.d.ts',
+											import: './dist/*.mjs',
+										},
+									},
+								}),
+								'index.d.ts': '',
+								'index.mjs': '',
+								'dist/a.d.ts': '',
+								'dist/a.mjs': '',
+							},
+						});
+
+						const packageExports = await getPackageEntryPoints(pkg.packagePath);
+						expect(packageExports).toStrictEqual({
+							'.': [
+								[['types'], './index.d.ts'],
+								[['import'], './index.mjs'],
+							],
+							'./a': [
+								[['types'], './dist/a.d.ts'],
+								[['import'], './dist/a.mjs'],
+							],
+						});
+					});
+
+					test('vue-like exports', async () => {
+						await using pkg = await createPackage({
+							pkg: {
+								'package.json': createPackageJson({
+									exports: {
+										'.': {
+											types: './dist/vue.d.ts',
+											import: './index.mjs',
+											require: './index.js',
+										},
+										'./server-renderer': {
+											import: './server-renderer/index.mjs',
+											require: './server-renderer/index.js',
+										},
+										'./package.json': './package.json',
+										'./dist/*': './dist/*',
+									},
+								}),
+								'dist/vue.d.ts': '',
+								'dist/vue.cjs.js': '',
+								'index.mjs': '',
+								'index.js': '',
+								'server-renderer/index.mjs': '',
+								'server-renderer/index.js': '',
+							},
+						});
+
+						const packageExports = await getPackageEntryPoints(pkg.packagePath);
+						expect(packageExports).toStrictEqual({
+							'.': [
+								[['types'], './dist/vue.d.ts'],
+								[['import'], './index.mjs'],
+								[['require'], './index.js'],
+							],
+							'./server-renderer': [
+								[['import'], './server-renderer/index.mjs'],
+								[['require'], './server-renderer/index.js'],
+							],
+							'./package.json': [
+								[['default'], './package.json'],
+							],
+							'./dist/vue.d.ts': [
+								[['default'], './dist/vue.d.ts'],
+							],
+							'./dist/vue.cjs.js': [
+								[['default'], './dist/vue.cjs.js'],
+							],
+						});
+					});
+				});
 			});
 		});
 	}

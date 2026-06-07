@@ -49,6 +49,7 @@
 		"lint": "lintroll --cache .",
 		"type-check": "tsc",
 		"test": "tsx tests",
+		"coverage": "c8 --reporter=text --reporter=html --include='src/**' --exclude='src/types.ts' --all tsx --conditions=development tests",
 		"benchmark": "tsx --conditions=development scripts/benchmark.ts",
 		"dev": "tsx watch --conditions=development tests",
 		"prepack": "pnpm build && clean-pkg-json"
@@ -58,6 +59,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "^24.10.1",
+		"c8": "^11.0.0",
 		"clean-pkg-json": "^1.3.0",
 		"execa": "^9.6.1",
 		"fs-fixture": "^2.9.0",

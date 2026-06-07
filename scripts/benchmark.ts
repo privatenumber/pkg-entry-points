@@ -81,9 +81,24 @@ const createFs = (
 		return [...directories, ...fileEntries];
 	};
 
+	const lstatSync = (absolute: string) => {
+		const slash = absolute.lastIndexOf('/');
+		const parent = children.get(absolute.slice(0, slash));
+		const isFile = parent?.files.includes(absolute.slice(slash + 1)) ?? false;
+		const isDirectory = children.has(absolute);
+		if (!isFile && !isDirectory) {
+			throw new Error(`ENOENT: ${absolute}`);
+		}
+		return {
+			isFile: () => isFile,
+			isDirectory: () => isDirectory,
+		};
+	};
+
 	return {
 		readFileSync: () => manifestString,
 		readdirSync,
+		lstatSync,
 	} as unknown as typeof nodeFs;
 };
 

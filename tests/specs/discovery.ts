@@ -172,6 +172,36 @@ export default testSuite(({ describe }) => {
 						'./a': [[['default'], './dist/a.mjs']],
 					});
 				});
+
+				test('trailing separator on packagePath (legacy)', async () => {
+					await using pkg = await createPackage({
+						pkg: {
+							'package.json': createPackageJson({ main: './index.js' }),
+							'index.js': 'module.exports = 1',
+						},
+					});
+
+					const withSeparator = await getEntries(pkg.packagePath + path.sep);
+					expect(withSeparator).toStrictEqual({
+						'.': [[['default'], './index.js']],
+						'./index.js': [[['default'], './index.js']],
+						'./package.json': [[['default'], './package.json']],
+					});
+				});
+
+				test('wildcard pointing at a missing directory yields nothing', async () => {
+					await using pkg = await createPackage({
+						pkg: {
+							'package.json': createPackageJson({
+								exports: { './*': './missing/*.mjs' },
+							}),
+							'index.js': '',
+						},
+					});
+
+					const result = await getEntries(pkg.packagePath);
+					expect(result).toStrictEqual({});
+				});
 			});
 		});
 	}
@@ -181,65 +211,54 @@ export default testSuite(({ describe }) => {
 	 * changes which fs calls happen, so lock that a custom fs is used and works.
 	 */
 	describe('custom fs', ({ test }) => {
+		// A Proxy delegates every method, so the test stays valid as the set of
+		// fs calls evolves (e.g. discovery added `lstat`). It records which
+		// methods were accessed to confirm the injected fs is actually used.
 		test('async uses the provided fs', async () => {
 			await using pkg = await createPackage({
 				pkg: {
-					'package.json': createPackageJson({ exports: './a.mjs' }),
-					'a.mjs': 'export default 1',
+					'package.json': createPackageJson({ exports: { './*': './dist/*.mjs' } }),
+					'dist/a.mjs': 'export default 1',
 				},
 			});
 
-			const calls = {
-				readFile: 0,
-				readdir: 0,
-			};
-			const customFs = {
-				readFile: (...args: Parameters<typeof fs.promises.readFile>) => {
-					calls.readFile += 1;
-					return fs.promises.readFile(...args);
+			const used = new Set<string>();
+			const trackingFs = new Proxy(fs.promises, {
+				get(target, property) {
+					used.add(property.toString());
+					return target[property as keyof typeof target];
 				},
-				readdir: (...args: Parameters<typeof fs.promises.readdir>) => {
-					calls.readdir += 1;
-					return fs.promises.readdir(...args);
-				},
-			} as unknown as typeof fs.promises;
+			});
 
-			const result = await getPackageEntryPoints(pkg.packagePath, customFs);
-			expect(calls.readFile).toBeGreaterThan(0);
-			expect(calls.readdir).toBeGreaterThan(0);
+			const result = await getPackageEntryPoints(pkg.packagePath, trackingFs);
+			expect(used.has('readFile')).toBe(true);
+			expect(used.has('readdir')).toBe(true);
 			expect(result).toStrictEqual({
-				'.': [[['default'], './a.mjs']],
+				'./a': [[['default'], './dist/a.mjs']],
 			});
 		});
 
 		test('sync uses the provided fs', async () => {
 			await using pkg = await createPackage({
 				pkg: {
-					'package.json': createPackageJson({ exports: './a.mjs' }),
-					'a.mjs': 'export default 1',
+					'package.json': createPackageJson({ exports: { './*': './dist/*.mjs' } }),
+					'dist/a.mjs': 'export default 1',
 				},
 			});
 
-			const calls = {
-				readFileSync: 0,
-				readdirSync: 0,
-			};
-			const customFs = {
-				readFileSync: (...args: Parameters<typeof fs.readFileSync>) => {
-					calls.readFileSync += 1;
-					return fs.readFileSync(...args);
+			const used = new Set<string>();
+			const trackingFs = new Proxy(fs, {
+				get(target, property) {
+					used.add(property.toString());
+					return target[property as keyof typeof target];
 				},
-				readdirSync: (...args: Parameters<typeof fs.readdirSync>) => {
-					calls.readdirSync += 1;
-					return fs.readdirSync(...args);
-				},
-			} as unknown as typeof fs;
+			});
 
-			const result = getPackageEntryPointsSync(pkg.packagePath, customFs);
-			expect(calls.readFileSync).toBeGreaterThan(0);
-			expect(calls.readdirSync).toBeGreaterThan(0);
+			const result = getPackageEntryPointsSync(pkg.packagePath, trackingFs);
+			expect(used.has('readFileSync')).toBe(true);
+			expect(used.has('readdirSync')).toBe(true);
 			expect(result).toStrictEqual({
-				'.': [[['default'], './a.mjs']],
+				'./a': [[['default'], './dist/a.mjs']],
 			});
 		});
 	});

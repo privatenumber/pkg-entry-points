@@ -34,14 +34,12 @@ export default testSuite(({ describe }) => {
 				});
 
 				/**
-				 * KNOWN DIVERGENCE: Node's recursive `readdirSync` follows symlinked
-				 * directories, but async `readdir` does not (Node 24). So sync lists
-				 * files under a symlinked dir and async doesn't. Pinned so the
-				 * difference is visible; Phase 2's manual walk is the natural place to
-				 * unify them to the async behavior (don't follow). See the divergences
-				 * note in .project-notes.
+				 * The manual walk skips symlinked directories (`isDirectory()` is
+				 * false for a symlink) in both sync and async. This unifies a prior
+				 * divergence where recursive `readdirSync` followed symlinked dirs but
+				 * async `readdir` did not.
 				 */
-				test('symlinked directory (sync follows, async does not)', async () => {
+				test('does not follow symlinked directories', async () => {
 					await using pkg = await createPackage({
 						pkg: {
 							'package.json': createPackageJson({ main: './index.js' }),
@@ -52,20 +50,12 @@ export default testSuite(({ describe }) => {
 					});
 
 					const result = await getEntries(pkg.packagePath);
-					const base = {
+					expect(result).toStrictEqual({
 						'.': [[['default'], './index.js']],
 						'./index.js': [[['default'], './index.js']],
 						'./real/deep.js': [[['default'], './real/deep.js']],
 						'./package.json': [[['default'], './package.json']],
-					};
-					expect(result).toStrictEqual(
-						scenario === 'sync'
-							? {
-								...base,
-								'./linked/deep.js': [[['default'], './linked/deep.js']],
-							}
-							: base,
-					);
+					});
 				});
 
 				/**

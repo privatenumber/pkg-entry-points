@@ -32,18 +32,58 @@ const createFs = (
 	files: string[],
 ) => {
 	const manifestString = JSON.stringify(manifest);
-	const dirents = files.map((relativePath) => {
-		const slash = relativePath.lastIndexOf('/');
-		return {
-			name: slash === -1 ? relativePath : relativePath.slice(slash + 1),
-			parentPath: slash === -1 ? root : `${root}/${relativePath.slice(0, slash)}`,
+
+	// Build an in-memory directory tree so per-directory `readdir` works
+	// (the analysis now walks one directory at a time).
+	type DirectoryNode = {
+		files: string[];
+		dirs: Set<string>;
+	};
+	const children = new Map<string, DirectoryNode>();
+	const directory = (absolute: string) => {
+		let node = children.get(absolute);
+		if (!node) {
+			node = {
+				files: [],
+				dirs: new Set(),
+			};
+			children.set(absolute, node);
+		}
+		return node;
+	};
+	directory(root);
+	for (const file of files) {
+		const segments = file.split('/');
+		let absolute = root;
+		for (let i = 0; i < segments.length - 1; i += 1) {
+			directory(absolute).dirs.add(segments[i]);
+			absolute += `/${segments[i]}`;
+			directory(absolute);
+		}
+		directory(absolute).files.push(segments.at(-1)!);
+	}
+
+	const readdirSync = (absolute: string) => {
+		const node = children.get(absolute);
+		if (!node) {
+			return [];
+		}
+		const directories = Array.from(node.dirs, name => ({
+			name,
+			isFile: () => false,
+			isDirectory: () => true,
+		}));
+		const fileEntries = node.files.map(name => ({
+			name,
 			isFile: () => true,
-		};
-	});
+			isDirectory: () => false,
+		}));
+		return [...directories, ...fileEntries];
+	};
 
 	return {
 		readFileSync: () => manifestString,
-		readdirSync: () => dirents,
+		readdirSync,
 	} as unknown as typeof nodeFs;
 };
 

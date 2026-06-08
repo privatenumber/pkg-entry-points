@@ -106,7 +106,9 @@ export const getAllFilesSync = (
 const isValidTarget = (
 	target: string,
 ) => {
-	const segments = target.split('/');
+	// Split on both separators: `path.join` treats `\` as a separator too, so
+	// `./..\secret` must not slip past on Windows.
+	const segments = target.split(/[\\/]/);
 	// segments[0] is the leading '.'; validate the rest.
 	for (let i = 1; i < segments.length; i += 1) {
 		const segment = segments[i].toLowerCase();
@@ -260,10 +262,14 @@ export const discoverReferencedFiles = async (
 	await Promise.all([
 		...Array.from(wildcardDirectories, async (relativeDirectory) => {
 			const absoluteDirectory = toAbsolute(packagePath, relativeDirectory);
-			const stats = await tryLstat(fs, absoluteDirectory);
-			// Skip missing dirs and symlinked roots (the latter to match the full walk).
-			if (!stats?.isDirectory()) {
-				return;
+			// A wildcard into a subdirectory is skipped if it's missing or a symlink
+			// (matching the full walk). The package root is always followed — it may
+			// itself be a symlink (e.g. pnpm `node_modules/<pkg>`), as readdir would.
+			if (relativeDirectory) {
+				const stats = await tryLstat(fs, absoluteDirectory);
+				if (!stats?.isDirectory()) {
+					return;
+				}
 			}
 			const collected: string[] = [];
 			await walkDirectory(fs, absoluteDirectory, toRelativePrefix(relativeDirectory), collected);
@@ -292,10 +298,14 @@ export const discoverReferencedFilesSync = (
 
 	for (const relativeDirectory of Array.from(wildcardDirectories)) {
 		const absoluteDirectory = toAbsolute(packagePath, relativeDirectory);
-		const stats = tryLstatSync(fs, absoluteDirectory);
-		// Skip missing dirs and symlinked roots (the latter to match the full walk).
-		if (!stats?.isDirectory()) {
-			continue;
+		// A wildcard into a subdirectory is skipped if it's missing or a symlink
+		// (matching the full walk). The package root is always followed — it may
+		// itself be a symlink (e.g. pnpm `node_modules/<pkg>`), as readdir would.
+		if (relativeDirectory) {
+			const stats = tryLstatSync(fs, absoluteDirectory);
+			if (!stats?.isDirectory()) {
+				continue;
+			}
 		}
 		const collected: string[] = [];
 		walkDirectorySync(fs, absoluteDirectory, toRelativePrefix(relativeDirectory), collected);

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { testSuite, expect } from 'manten';
+import { createFixture } from 'fs-fixture';
 import { createPackage, createPackageJson, testScenarios } from '../utils.js';
 import { getPackageEntryPoints, getPackageEntryPointsSync } from '#pkg-entry-points';
 
@@ -216,6 +217,21 @@ export default testSuite(({ describe }) => {
 
 					const result = await getEntries(pkg.packagePath);
 					expect(result).toStrictEqual({});
+				});
+
+				test('follows a symlinked package root for root wildcards', async () => {
+					await using fixture = await createFixture({
+						'real-pkg': {
+							'package.json': createPackageJson({ exports: { './*': './*.mjs' } }),
+							'a.mjs': 'export default 1',
+						},
+						'node_modules/pkg': ({ symlink, getPath }) => symlink(getPath('real-pkg'), 'dir'),
+					});
+
+					const result = await getEntries(fixture.getPath('node_modules/pkg'));
+					expect(result).toStrictEqual({
+						'./a': [[['default'], './a.mjs']],
+					});
 				});
 
 				test('rejects path-escaping and invalid export targets', async () => {

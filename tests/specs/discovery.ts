@@ -202,6 +202,21 @@ export default testSuite(({ describe }) => {
 					const result = await getEntries(pkg.packagePath);
 					expect(result).toStrictEqual({});
 				});
+
+				test('does not follow a symlinked wildcard directory', async () => {
+					await using pkg = await createPackage({
+						pkg: {
+							'package.json': createPackageJson({
+								exports: { './*': './linked/*.mjs' },
+							}),
+							'real/a.mjs': 'export default 1',
+							linked: ({ symlink }) => symlink('./real', 'dir'),
+						},
+					});
+
+					const result = await getEntries(pkg.packagePath);
+					expect(result).toStrictEqual({});
+				});
 			});
 		});
 	}
@@ -260,6 +275,49 @@ export default testSuite(({ describe }) => {
 			expect(result).toStrictEqual({
 				'./a': [[['default'], './dist/a.mjs']],
 			});
+		});
+
+		// A real fs error (not a missing path) must surface, not be swallowed.
+		test('async surfaces non-missing fs errors', async () => {
+			await using pkg = await createPackage({
+				pkg: {
+					'package.json': createPackageJson({ exports: './a.mjs' }),
+					'a.mjs': 'export default 1',
+				},
+			});
+
+			const failingFs = new Proxy(fs.promises, {
+				get(target, property) {
+					if (property === 'lstat') {
+						return () => Promise.reject(Object.assign(new Error('denied'), { code: 'EACCES' }));
+					}
+					return target[property as keyof typeof target];
+				},
+			});
+
+			await expect(getPackageEntryPoints(pkg.packagePath, failingFs)).rejects.toThrow('denied');
+		});
+
+		test('sync surfaces non-missing fs errors', async () => {
+			await using pkg = await createPackage({
+				pkg: {
+					'package.json': createPackageJson({ exports: './a.mjs' }),
+					'a.mjs': 'export default 1',
+				},
+			});
+
+			const failingFs = new Proxy(fs, {
+				get(target, property) {
+					if (property === 'lstatSync') {
+						return () => {
+							throw Object.assign(new Error('denied'), { code: 'EACCES' });
+						};
+					}
+					return target[property as keyof typeof target];
+				},
+			});
+
+			expect(() => getPackageEntryPointsSync(pkg.packagePath, failingFs)).toThrow('denied');
 		});
 	});
 });

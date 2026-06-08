@@ -155,6 +155,65 @@ const toRelativePrefix = (
 		: ''
 );
 
+// A path that simply isn't there. Other errors (e.g. EACCES) should surface.
+const isMissing = (
+	error: unknown,
+) => {
+	const code = (error as NodeJS.ErrnoException | null)?.code;
+	return code === 'ENOENT' || code === 'ENOTDIR';
+};
+
+// `lstat` a path, returning undefined if it's absent but surfacing real errors.
+const tryLstat = async (
+	fs: Pick<typeof _fs.promises, 'lstat'>,
+	absolutePath: string,
+) => {
+	try {
+		return await fs.lstat(absolutePath);
+	} catch (error) {
+		if (!isMissing(error)) {
+			throw error;
+		}
+		return undefined;
+	}
+};
+
+const tryLstatSync = (
+	fs: Pick<typeof _fs, 'lstatSync'>,
+	absolutePath: string,
+) => {
+	try {
+		return fs.lstatSync(absolutePath);
+	} catch (error) {
+		if (!isMissing(error)) {
+			throw error;
+		}
+		return undefined;
+	}
+};
+
+const partitionTargets = (
+	exports: PackageJson.Exports,
+) => {
+	const targets = new Set<string>();
+	collectExportTargets(exports, targets);
+
+	const wildcardDirectories = new Set<string>();
+	const explicitTargets = new Set<string>();
+	for (const target of Array.from(targets)) {
+		if (target.includes(STAR)) {
+			wildcardDirectories.add(wildcardDirectory(target));
+		} else {
+			explicitTargets.add(target);
+		}
+	}
+
+	return {
+		wildcardDirectories,
+		explicitTargets,
+	};
+};
+
 /**
  * Discover only the files an `exports` map references, instead of scanning the
  * whole package: walk the directory each wildcard target points into, and
@@ -169,46 +228,27 @@ export const discoverReferencedFiles = async (
 	packagePath: string,
 	exports: PackageJson.Exports,
 ): Promise<string[]> => {
-	const targets = new Set<string>();
-	collectExportTargets(exports, targets);
-
-	const wildcardDirectories = new Set<string>();
-	const explicitTargets: string[] = [];
-	for (const target of Array.from(targets)) {
-		if (target.includes(STAR)) {
-			wildcardDirectories.add(wildcardDirectory(target));
-		} else {
-			explicitTargets.push(target);
-		}
-	}
-
+	const { wildcardDirectories, explicitTargets } = partitionTargets(exports);
 	const files = new Set<string>();
 
 	await Promise.all([
 		...Array.from(wildcardDirectories, async (relativeDirectory) => {
-			const collected: string[] = [];
-			try {
-				await walkDirectory(
-					fs,
-					toAbsolute(packagePath, relativeDirectory),
-					toRelativePrefix(relativeDirectory),
-					collected,
-				);
-			} catch {
-				// Referenced directory may not exist; nothing to contribute.
+			const absoluteDirectory = toAbsolute(packagePath, relativeDirectory);
+			const stats = await tryLstat(fs, absoluteDirectory);
+			// Skip missing dirs and symlinked roots (the latter to match the full walk).
+			if (!stats?.isDirectory()) {
+				return;
 			}
+			const collected: string[] = [];
+			await walkDirectory(fs, absoluteDirectory, toRelativePrefix(relativeDirectory), collected);
 			for (const file of collected) {
 				files.add(file);
 			}
 		}),
-		...explicitTargets.map(async (target) => {
-			try {
-				const stats = await fs.lstat(path.join(packagePath, target));
-				if (stats.isFile()) {
-					files.add(target);
-				}
-			} catch {
-				// Missing target; not an entry point.
+		...Array.from(explicitTargets, async (target) => {
+			const stats = await tryLstat(fs, path.join(packagePath, target));
+			if (stats?.isFile()) {
+				files.add(target);
 			}
 		}),
 	]);
@@ -221,36 +261,27 @@ export const discoverReferencedFilesSync = (
 	packagePath: string,
 	exports: PackageJson.Exports,
 ): string[] => {
-	const targets = new Set<string>();
-	collectExportTargets(exports, targets);
-
+	const { wildcardDirectories, explicitTargets } = partitionTargets(exports);
 	const files = new Set<string>();
-	for (const target of Array.from(targets)) {
-		if (target.includes(STAR)) {
-			const relativeDirectory = wildcardDirectory(target);
-			const collected: string[] = [];
-			try {
-				walkDirectorySync(
-					fs,
-					toAbsolute(packagePath, relativeDirectory),
-					toRelativePrefix(relativeDirectory),
-					collected,
-				);
-			} catch {
-				// Referenced directory may not exist.
-			}
-			for (const file of collected) {
-				files.add(file);
-			}
-		} else {
-			try {
-				const stats = fs.lstatSync(path.join(packagePath, target));
-				if (stats.isFile()) {
-					files.add(target);
-				}
-			} catch {
-				// Missing target.
-			}
+
+	for (const relativeDirectory of Array.from(wildcardDirectories)) {
+		const absoluteDirectory = toAbsolute(packagePath, relativeDirectory);
+		const stats = tryLstatSync(fs, absoluteDirectory);
+		// Skip missing dirs and symlinked roots (the latter to match the full walk).
+		if (!stats?.isDirectory()) {
+			continue;
+		}
+		const collected: string[] = [];
+		walkDirectorySync(fs, absoluteDirectory, toRelativePrefix(relativeDirectory), collected);
+		for (const file of collected) {
+			files.add(file);
+		}
+	}
+
+	for (const target of Array.from(explicitTargets)) {
+		const stats = tryLstatSync(fs, path.join(packagePath, target));
+		if (stats?.isFile()) {
+			files.add(target);
 		}
 	}
 

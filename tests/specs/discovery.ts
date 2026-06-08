@@ -217,6 +217,27 @@ export default testSuite(({ describe }) => {
 					const result = await getEntries(pkg.packagePath);
 					expect(result).toStrictEqual({});
 				});
+
+				test('rejects path-escaping and invalid export targets', async () => {
+					await using pkg = await createPackage({
+						pkg: {
+							'package.json': createPackageJson({
+								exports: {
+									'./traverse': './dist/../index.js',
+									'./escape': './../../secret.js',
+									'./nm': './node_modules/dep.js',
+									'./ok': './index.js',
+								},
+							}),
+							'index.js': 'module.exports = 1',
+						},
+					});
+
+					const result = await getEntries(pkg.packagePath);
+					expect(result).toStrictEqual({
+						'./ok': [[['default'], './index.js']],
+					});
+				});
 			});
 		});
 	}

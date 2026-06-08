@@ -97,18 +97,44 @@ export const getAllFilesSync = (
 };
 
 /**
- * Collect every `./`-relative string target from an `exports` subtree.
+ * Whether a relative target is a safe package-relative path. Mirrors Node's
+ * `PACKAGE_TARGET_RESOLVE`, which rejects targets with empty, `.`, `..`, or
+ * `node_modules` segments — they escape the package or are invalid, and were
+ * never matched by the full scan either. Without this, `path.join` would
+ * normalize e.g. `./dist/../index.js` and stat paths outside the package.
+ */
+const isValidTarget = (
+	target: string,
+) => {
+	const segments = target.split('/');
+	// segments[0] is the leading '.'; validate the rest.
+	for (let i = 1; i < segments.length; i += 1) {
+		const segment = segments[i].toLowerCase();
+		if (
+			segment === ''
+			|| segment === '.'
+			|| segment === '..'
+			|| segment === 'node_modules'
+		) {
+			return false;
+		}
+	}
+	return true;
+};
+
+/**
+ * Collect every safe `./`-relative string target from an `exports` subtree.
  *
  * Only relative (`./`) targets can resolve to real files; bare/URL/protocol
- * targets and `null` are skipped. Object keys (subpaths/conditions) are not
- * targets — only values are.
+ * targets, `null`, and path-escaping targets are skipped. Object keys
+ * (subpaths/conditions) are not targets — only values are.
  */
 const collectExportTargets = (
 	exportsValue: PackageJson.Exports,
 	targets: Set<string>,
 ): void => {
 	if (typeof exportsValue === 'string') {
-		if (exportsValue.startsWith('./')) {
+		if (exportsValue.startsWith('./') && isValidTarget(exportsValue)) {
 			targets.add(exportsValue);
 		}
 	} else if (Array.isArray(exportsValue)) {

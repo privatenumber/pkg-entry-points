@@ -43,7 +43,7 @@ export const pathMatches = (
 	}
 
 	let lastIndex = 0;
-	let starValue = '';
+	let starValue: string | undefined;
 	for (const segment of middleSegments) {
 		const segmentIndex = filePathMiddle.indexOf(segment, lastIndex);
 		if (segmentIndex === -1) {
@@ -51,13 +51,19 @@ export const pathMatches = (
 		}
 
 		const extracted = filePathMiddle.slice(lastIndex, segmentIndex);
-		if (!starValue) {
+		if (starValue === undefined) {
 			starValue = extracted;
 		} else if (starValue !== extracted) {
 			return;
 		}
 
 		lastIndex = segmentIndex + segment.length;
+	}
+
+	// Every `*` binds to the same capture, including the final one before the
+	// suffix — otherwise `*-*.js` would wrongly match `a-b.js`.
+	if (starValue !== filePathMiddle.slice(lastIndex)) {
+		return;
 	}
 
 	return starValue;

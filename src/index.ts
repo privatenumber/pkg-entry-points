@@ -1,7 +1,9 @@
 import _fs from 'fs';
 import path from 'path';
 import type { PackageJson } from 'type-fest';
-import { getAllFiles, getAllFilesSync } from './utils/get-all-files.js';
+import {
+	getAllFiles, getAllFilesSync, discoverReferencedFiles, discoverReferencedFilesSync,
+} from './utils/get-all-files.js';
 import { createPathMatcher, pathMatches, type PathMatcher } from './utils/path-matcher.js';
 import { STAR } from './utils/constants.js';
 import { resolveLegacyEntries } from './resolve-legacy-entries.js';
@@ -275,12 +277,13 @@ export const getPackageEntryPoints = async (
 ): Promise<PackageEntryPoints> => {
 	const packageJsonString = await fs.readFile(path.join(packagePath, 'package.json'), 'utf8');
 	const packageJson = JSON.parse(packageJsonString) as PackageJson;
-	const packageFiles = await getAllFiles(fs, packagePath);
 
 	if (packageJson.exports !== undefined) {
+		const packageFiles = await discoverReferencedFiles(fs, packagePath, packageJson.exports);
 		return analyzeExportsWithFiles(packageJson.exports, packageFiles);
 	}
 
+	const packageFiles = await getAllFiles(fs, packagePath);
 	return resolveLegacyEntries(packageJson, packageFiles);
 };
 
@@ -290,11 +293,12 @@ export const getPackageEntryPointsSync = (
 ): PackageEntryPoints => {
 	const packageJsonString = fs.readFileSync(path.join(packagePath, 'package.json'), 'utf8');
 	const packageJson = JSON.parse(packageJsonString) as PackageJson;
-	const packageFiles = getAllFilesSync(fs, packagePath);
 
 	if (packageJson.exports !== undefined) {
+		const packageFiles = discoverReferencedFilesSync(fs, packagePath, packageJson.exports);
 		return analyzeExportsWithFiles(packageJson.exports, packageFiles);
 	}
 
+	const packageFiles = getAllFilesSync(fs, packagePath);
 	return resolveLegacyEntries(packageJson, packageFiles);
 };

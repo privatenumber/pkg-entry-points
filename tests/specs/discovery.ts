@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { testSuite, expect } from 'manten';
+import { createFixture } from 'fs-fixture';
 import { createPackage, createPackageJson, testScenarios } from '../utils.js';
 import { getPackageEntryPoints, getPackageEntryPointsSync } from '#pkg-entry-points';
 
@@ -34,14 +35,12 @@ export default testSuite(({ describe }) => {
 				});
 
 				/**
-				 * KNOWN DIVERGENCE: Node's recursive `readdirSync` follows symlinked
-				 * directories, but async `readdir` does not (Node 24). So sync lists
-				 * files under a symlinked dir and async doesn't. Pinned so the
-				 * difference is visible; Phase 2's manual walk is the natural place to
-				 * unify them to the async behavior (don't follow). See the divergences
-				 * note in .project-notes.
+				 * The manual walk skips symlinked directories (`isDirectory()` is
+				 * false for a symlink) in both sync and async. This unifies a prior
+				 * divergence where recursive `readdirSync` followed symlinked dirs but
+				 * async `readdir` did not.
 				 */
-				test('symlinked directory (sync follows, async does not)', async () => {
+				test('does not follow symlinked directories', async () => {
 					await using pkg = await createPackage({
 						pkg: {
 							'package.json': createPackageJson({ main: './index.js' }),
@@ -52,20 +51,12 @@ export default testSuite(({ describe }) => {
 					});
 
 					const result = await getEntries(pkg.packagePath);
-					const base = {
+					expect(result).toStrictEqual({
 						'.': [[['default'], './index.js']],
 						'./index.js': [[['default'], './index.js']],
 						'./real/deep.js': [[['default'], './real/deep.js']],
 						'./package.json': [[['default'], './package.json']],
-					};
-					expect(result).toStrictEqual(
-						scenario === 'sync'
-							? {
-								...base,
-								'./linked/deep.js': [[['default'], './linked/deep.js']],
-							}
-							: base,
-					);
+					});
 				});
 
 				/**
@@ -182,6 +173,87 @@ export default testSuite(({ describe }) => {
 						'./a': [[['default'], './dist/a.mjs']],
 					});
 				});
+
+				test('trailing separator on packagePath (legacy)', async () => {
+					await using pkg = await createPackage({
+						pkg: {
+							'package.json': createPackageJson({ main: './index.js' }),
+							'index.js': 'module.exports = 1',
+						},
+					});
+
+					const withSeparator = await getEntries(pkg.packagePath + path.sep);
+					expect(withSeparator).toStrictEqual({
+						'.': [[['default'], './index.js']],
+						'./index.js': [[['default'], './index.js']],
+						'./package.json': [[['default'], './package.json']],
+					});
+				});
+
+				test('wildcard pointing at a missing directory yields nothing', async () => {
+					await using pkg = await createPackage({
+						pkg: {
+							'package.json': createPackageJson({
+								exports: { './*': './missing/*.mjs' },
+							}),
+							'index.js': '',
+						},
+					});
+
+					const result = await getEntries(pkg.packagePath);
+					expect(result).toStrictEqual({});
+				});
+
+				test('does not follow a symlinked wildcard directory', async () => {
+					await using pkg = await createPackage({
+						pkg: {
+							'package.json': createPackageJson({
+								exports: { './*': './linked/*.mjs' },
+							}),
+							'real/a.mjs': 'export default 1',
+							linked: ({ symlink }) => symlink('./real', 'dir'),
+						},
+					});
+
+					const result = await getEntries(pkg.packagePath);
+					expect(result).toStrictEqual({});
+				});
+
+				test('follows a symlinked package root for root wildcards', async () => {
+					await using fixture = await createFixture({
+						'real-pkg': {
+							'package.json': createPackageJson({ exports: { './*': './*.mjs' } }),
+							'a.mjs': 'export default 1',
+						},
+						'node_modules/pkg': ({ symlink, getPath }) => symlink(getPath('real-pkg'), 'dir'),
+					});
+
+					const result = await getEntries(fixture.getPath('node_modules/pkg'));
+					expect(result).toStrictEqual({
+						'./a': [[['default'], './a.mjs']],
+					});
+				});
+
+				test('rejects path-escaping and invalid export targets', async () => {
+					await using pkg = await createPackage({
+						pkg: {
+							'package.json': createPackageJson({
+								exports: {
+									'./traverse': './dist/../index.js',
+									'./escape': './../../secret.js',
+									'./nm': './node_modules/dep.js',
+									'./ok': './index.js',
+								},
+							}),
+							'index.js': 'module.exports = 1',
+						},
+					});
+
+					const result = await getEntries(pkg.packagePath);
+					expect(result).toStrictEqual({
+						'./ok': [[['default'], './index.js']],
+					});
+				});
 			});
 		});
 	}
@@ -191,66 +263,98 @@ export default testSuite(({ describe }) => {
 	 * changes which fs calls happen, so lock that a custom fs is used and works.
 	 */
 	describe('custom fs', ({ test }) => {
+		// A Proxy delegates every method, so the test stays valid as the set of
+		// fs calls evolves (e.g. discovery added `lstat`). It records which
+		// methods were accessed to confirm the injected fs is actually used.
 		test('async uses the provided fs', async () => {
 			await using pkg = await createPackage({
 				pkg: {
-					'package.json': createPackageJson({ exports: './a.mjs' }),
-					'a.mjs': 'export default 1',
+					'package.json': createPackageJson({ exports: { './*': './dist/*.mjs' } }),
+					'dist/a.mjs': 'export default 1',
 				},
 			});
 
-			const calls = {
-				readFile: 0,
-				readdir: 0,
-			};
-			const customFs = {
-				readFile: (...args: Parameters<typeof fs.promises.readFile>) => {
-					calls.readFile += 1;
-					return fs.promises.readFile(...args);
+			const used = new Set<string>();
+			const trackingFs = new Proxy(fs.promises, {
+				get(target, property) {
+					used.add(property.toString());
+					return target[property as keyof typeof target];
 				},
-				readdir: (...args: Parameters<typeof fs.promises.readdir>) => {
-					calls.readdir += 1;
-					return fs.promises.readdir(...args);
-				},
-			} as unknown as typeof fs.promises;
+			});
 
-			const result = await getPackageEntryPoints(pkg.packagePath, customFs);
-			expect(calls.readFile).toBeGreaterThan(0);
-			expect(calls.readdir).toBeGreaterThan(0);
+			const result = await getPackageEntryPoints(pkg.packagePath, trackingFs);
+			expect(used.has('readFile')).toBe(true);
+			expect(used.has('readdir')).toBe(true);
 			expect(result).toStrictEqual({
-				'.': [[['default'], './a.mjs']],
+				'./a': [[['default'], './dist/a.mjs']],
 			});
 		});
 
 		test('sync uses the provided fs', async () => {
 			await using pkg = await createPackage({
 				pkg: {
+					'package.json': createPackageJson({ exports: { './*': './dist/*.mjs' } }),
+					'dist/a.mjs': 'export default 1',
+				},
+			});
+
+			const used = new Set<string>();
+			const trackingFs = new Proxy(fs, {
+				get(target, property) {
+					used.add(property.toString());
+					return target[property as keyof typeof target];
+				},
+			});
+
+			const result = getPackageEntryPointsSync(pkg.packagePath, trackingFs);
+			expect(used.has('readFileSync')).toBe(true);
+			expect(used.has('readdirSync')).toBe(true);
+			expect(result).toStrictEqual({
+				'./a': [[['default'], './dist/a.mjs']],
+			});
+		});
+
+		// A real fs error (not a missing path) must surface, not be swallowed.
+		test('async surfaces non-missing fs errors', async () => {
+			await using pkg = await createPackage({
+				pkg: {
 					'package.json': createPackageJson({ exports: './a.mjs' }),
 					'a.mjs': 'export default 1',
 				},
 			});
 
-			const calls = {
-				readFileSync: 0,
-				readdirSync: 0,
-			};
-			const customFs = {
-				readFileSync: (...args: Parameters<typeof fs.readFileSync>) => {
-					calls.readFileSync += 1;
-					return fs.readFileSync(...args);
+			const failingFs = new Proxy(fs.promises, {
+				get(target, property) {
+					if (property === 'lstat') {
+						return () => Promise.reject(Object.assign(new Error('denied'), { code: 'EACCES' }));
+					}
+					return target[property as keyof typeof target];
 				},
-				readdirSync: (...args: Parameters<typeof fs.readdirSync>) => {
-					calls.readdirSync += 1;
-					return fs.readdirSync(...args);
-				},
-			} as unknown as typeof fs;
-
-			const result = getPackageEntryPointsSync(pkg.packagePath, customFs);
-			expect(calls.readFileSync).toBeGreaterThan(0);
-			expect(calls.readdirSync).toBeGreaterThan(0);
-			expect(result).toStrictEqual({
-				'.': [[['default'], './a.mjs']],
 			});
+
+			await expect(getPackageEntryPoints(pkg.packagePath, failingFs)).rejects.toThrow('denied');
+		});
+
+		test('sync surfaces non-missing fs errors', async () => {
+			await using pkg = await createPackage({
+				pkg: {
+					'package.json': createPackageJson({ exports: './a.mjs' }),
+					'a.mjs': 'export default 1',
+				},
+			});
+
+			const failingFs = new Proxy(fs, {
+				get(target, property) {
+					if (property === 'lstatSync') {
+						return () => {
+							throw Object.assign(new Error('denied'), { code: 'EACCES' });
+						};
+					}
+					return target[property as keyof typeof target];
+				},
+			});
+
+			expect(() => getPackageEntryPointsSync(pkg.packagePath, failingFs)).toThrow('denied');
 		});
 	});
 });

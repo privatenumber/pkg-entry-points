@@ -21,9 +21,9 @@ npm install pkg-entry-points
 To get all entry-points for a package located at `./node_modules/my-package`:
 
 ```ts
-import { getPackageEntryPoints } from 'pkg-entry-points'
+import { getPackageEntryPoints, type PackageEntryPoints } from 'pkg-entry-points'
 
-const packageExports = await getPackageEntryPoints('./node_modules/my-package')
+const packageExports: PackageEntryPoints = await getPackageEntryPoints('./node_modules/my-package')
 
 console.log(packageExports)
 
@@ -461,7 +461,7 @@ Entry-points evaluated from the [`typescript` package](https://github.com/micros
 
 Returns: `Promise<PackageEntryPoints>`
 
-Type definitions:
+Type definitions (both `PackageEntryPoints` and `ConditionToPath` are exported):
 ```ts
 type PackageEntryPoints = {
     [subpath: string]: ConditionToPath[]

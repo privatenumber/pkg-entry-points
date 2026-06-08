@@ -11,6 +11,8 @@ import type {
 	ConditionsMap, PackageEntryPoints, StarMatch, ConditionToPath,
 } from './types.js';
 
+export type { PackageEntryPoints, ConditionToPath } from './types.js';
+
 type GetConditions = {
 	(
 		packageFiles: string[],

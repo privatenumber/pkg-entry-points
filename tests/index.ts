@@ -7,5 +7,6 @@ describe('pkg-entry-points', ({ runTestSuite }) => {
 	runTestSuite(import('./specs/merge-conditions.js'));
 	runTestSuite(import('./specs/no-exports.js'));
 	runTestSuite(import('./specs/discovery.js'));
+	runTestSuite(import('./specs/public-types.js'));
 	runTestSuite(import('./specs/nodejs-behavior.js'));
 });

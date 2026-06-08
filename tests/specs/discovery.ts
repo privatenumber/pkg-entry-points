@@ -142,6 +142,29 @@ export default testSuite(({ describe }) => {
 					});
 				});
 
+				/**
+				 * Every `*` in a pattern binds to the same capture, including the
+				 * final one before the suffix. The prior matcher never checked the
+				 * trailing segment, so `*-*.mjs` wrongly matched `b-c.mjs` (capturing
+				 * `b`). Node rejects it, so only the consistent `a-a.mjs` survives.
+				 */
+				test('trailing star must match the captured value', async () => {
+					await using pkg = await createPackage({
+						pkg: {
+							'package.json': createPackageJson({
+								exports: { './*': './dir/*-*.mjs' },
+							}),
+							'dir/a-a.mjs': 'export default 1',
+							'dir/b-c.mjs': 'export default 2',
+						},
+					});
+
+					const result = await getEntries(pkg.packagePath);
+					expect(result).toStrictEqual({
+						'./a': [[['default'], './dir/a-a.mjs']],
+					});
+				});
+
 				test('bare main without "./" prefix', async () => {
 					await using pkg = await createPackage({
 						pkg: {

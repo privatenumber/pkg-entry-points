@@ -42,8 +42,8 @@ importers:
         specifier: ^4.21.0
         version: 4.21.0
       type-fest:
-        specifier: ^5.1.0
-        version: 5.1.0
+        specifier: ^5.6.0
+        version: 5.6.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -2599,8 +2599,8 @@ packages:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
 
-  type-fest@5.1.0:
-    resolution: {integrity: sha512-wQ531tuWvB6oK+pchHIu5lHe5f5wpSCqB8Kf4dWQRbOYc9HTge7JL0G4Qd44bh6QuJCccIzL3bugb8GI0MwHrg==}
+  type-fest@5.6.0:
+    resolution: {integrity: sha512-8ZiHFm91orbSAe2PSAiSVBVko18pbhbiB3U9GglSzF/zCGkR+rxpHx6sEMCUm4kxY4LjDIUGgCfUMtwfZfjfUA==}
     engines: {node: '>=20'}
 
   type-flag@3.0.0:
@@ -5629,7 +5629,7 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
 
-  type-fest@5.1.0:
+  type-fest@5.6.0:
     dependencies:
       tagged-tag: 1.0.0
 
